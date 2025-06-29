@@ -1,0 +1,104 @@
+[
+  {
+    "id": "cat-groceries",
+    "name": "식료품",
+    "children": [
+      {
+        "id": "sub-vegetables",
+        "name": "채소",
+        "children": [
+          {
+            "id": "item-carrot",
+            "name": "당근"
+          },
+          {
+            "id": "item-onion",
+            "name": "양파"
+          }
+        ]
+      },
+      {
+        "id": "sub-fruits",
+        "name": "과일",
+        "children": [
+          {
+            "id": "item-apple",
+            "name": "사과"
+          },
+          {
+            "id": "item-banana",
+            "name": "바나나"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cat-household",
+    "name": "생활용품",
+    "children": [
+      {
+        "id": "sub-cleaning",
+        "name": "청소용품",
+        "children": [
+          {
+            "id": "item-detergent",
+            "name": "세제"
+          },
+          {
+            "id": "item-sponge",
+            "name": "수세미"
+          }
+        ]
+      },
+      {
+        "id": "sub-kitchen",
+        "name": "주방용품",
+        "children": [
+          {
+            "id": "item-foil",
+            "name": "쿠킹포일"
+          },
+          {
+            "id": "item-wrap",
+            "name": "랩"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cat-electronics",
+    "name": "전자제품",
+    "children": [
+      {
+        "id": "sub-mobile",
+        "name": "모바일",
+        "children": [
+          {
+            "id": "item-phone-case",
+            "name": "휴대폰 케이스"
+          },
+          {
+            "id": "item-charger",
+            "name": "충전기"
+          }
+        ]
+      },
+      {
+        "id": "sub-computer",
+        "name": "컴퓨터 주변기기",
+        "children": [
+          {
+            "id": "item-mouse",
+            "name": "마우스"
+          },
+          {
+            "id": "item-keyboard",
+            "name": "키보드"
+          }
+        ]
+      }
+    ]
+  }
+]
