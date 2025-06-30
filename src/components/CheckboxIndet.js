@@ -13,5 +13,13 @@ export default function CheckboxIndet({checked, indeterminate, ...props}) {
     if (ref.current) ref.current.indeterminate = indeterminate;
   }, [indeterminate]);
   
-  return <input type="checkbox" ref={ref} checked={checked} {...props} />;
+  return (
+    <input
+      type="checkbox"
+      ref={ref}
+      checked={checked}
+      className="custom-checkbox"
+      {...props}
+    />
+  );
 }

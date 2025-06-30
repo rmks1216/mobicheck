@@ -44,6 +44,38 @@ export const useChecklistStore = create(
           ),
         })),
       
+      // 새로 추가: 체크리스트 삭제
+      deleteChecklist: (id) =>
+        set((state) => {
+          const newChecklists = state.checklists.filter(c => c.id !== id);
+          const newActiveId = state.activeId === id
+            ? (newChecklists.length > 0 ? newChecklists[0].id : null)
+            : state.activeId;
+          
+          return {
+            checklists: newChecklists,
+            activeId: newActiveId,
+          };
+        }),
+      
+      // 새로 추가: 체크리스트 초기화 (모든 항목 삭제)
+      clearChecklist: (id) =>
+        set((state) => ({
+          checklists: state.checklists.map((c) =>
+            c.id === id ? { ...c, items: [] } : c
+          ),
+        })),
+      
+      // 새로 추가: 체크리스트 모든 항목 체크 해제
+      uncheckAllItems: (id) =>
+        set((state) => ({
+          checklists: state.checklists.map((c) =>
+            c.id === id
+              ? { ...c, items: c.items.map(item => ({ ...item, checked: false })) }
+              : c
+          ),
+        })),
+      
       /* ───────── 항목 담기 ─────────
          itemIds: [id, ...]
          ancestorMap: { id -> [조상들] } (정렬용)
@@ -68,9 +100,27 @@ export const useChecklistStore = create(
                   ].sort(
                     // 깊이(루트=0) 기준 상위 → 하위
                     (a, b) =>
-                      ancestorMap[a.id]?.length -
-                      ancestorMap[b.id]?.length
+                      (ancestorMap[a.id]?.length || 0) -
+                      (ancestorMap[b.id]?.length || 0)
                   ),
+                }
+            ),
+          };
+        }),
+      
+      // 새로 추가: 개별 항목 제거
+      removeItem: (itemId) =>
+        set((state) => {
+          const { activeId, checklists } = state;
+          if (!activeId) return state;
+          
+          return {
+            checklists: checklists.map((c) =>
+              c.id !== activeId
+                ? c
+                : {
+                  ...c,
+                  items: c.items.filter(item => item.id !== itemId),
                 }
             ),
           };
@@ -131,6 +181,15 @@ export const useChecklistStore = create(
             }),
           };
         }),
+      
+      // 새로 추가: 진행률 계산 헬퍼
+      getProgress: (checklistId) => {
+        const checklist = get().checklists.find(c => c.id === checklistId);
+        if (!checklist || checklist.items.length === 0) return 0;
+        
+        const completed = checklist.items.filter(item => item.checked).length;
+        return Math.round((completed / checklist.items.length) * 100);
+      },
     }),
     {
       name: 'checklists',
