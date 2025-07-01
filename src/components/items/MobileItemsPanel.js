@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useResponsive, useTouchGestures } from '../../hooks/useResponsive';
+import { categoryConfig } from './constants'; // categoryConfig import 추가
 import SearchBar from './SearchBar';
 import QuickAccessPanel from './QuickAccessPanel';
 import TreeItem from './TreeItem';
