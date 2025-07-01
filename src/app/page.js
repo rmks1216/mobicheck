@@ -40,6 +40,7 @@ export default async function HomePage() {
               <ChecklistTabs />
               <div className="flex-1 flex flex-col">
                 <ChecklistPanel
+                  allItems={allItems}
                   idNameMap={idNameMap}
                   descendantMap={descendantMap}
                   ancestorMap={ancestorMap}

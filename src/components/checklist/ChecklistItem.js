@@ -1,8 +1,33 @@
 'use client';
-import CheckboxIndet from '@/components/CheckboxIndet';
+
+import CheckboxIndet from './CheckboxIndet';
 import { RepeatCounter } from './RepeatComponents';
 
-// 아이템별 이모지 매핑
+// 체크박스 상태 계산 함수들
+function getDescendantState(itemId, descendantMap, itemsMap) {
+  const descendants = descendantMap[itemId] || [];
+  const checkedDesc = descendants.filter((d) => itemsMap.get(d)?.checked);
+  return {
+    all: descendants.length > 0 && checkedDesc.length === descendants.length,
+    some: checkedDesc.length > 0 && checkedDesc.length < descendants.length,
+  };
+}
+
+function getCompletionStats(itemId, descendantMap, itemsMap) {
+  const descendants = descendantMap[itemId] || [];
+  const presentDescendants = descendants.filter((d) => itemsMap.has(d));
+  const completed = presentDescendants.filter((d) => itemsMap.get(d)?.checked).length;
+  return {
+    completed,
+    total: presentDescendants.length,
+  };
+}
+
+function getItemLevel(id, ancestorMap) {
+  return ancestorMap[id]?.length || 0;
+}
+
+// 카테고리별 이모지 매핑
 const itemEmojis = {
   'cat-groceries': '🛒',
   'cat-household': '🏠',
@@ -27,36 +52,6 @@ const itemEmojis = {
   'item-keyboard': '⌨️'
 };
 
-function getDescendantState(id, descendantMap, itemsMap) {
-  const descendants = descendantMap[id] || [];
-  const present = descendants.filter((d) => itemsMap.has(d));
-  
-  if (present.length === 0) return { all: false, some: false };
-  
-  const allChecked = present.every((d) => itemsMap.get(d).checked);
-  const someChecked = present.some((d) => itemsMap.get(d).checked);
-  
-  return {
-    all: allChecked,
-    some: someChecked && !allChecked,
-  };
-}
-
-function getItemLevel(id, ancestorMap) {
-  return ancestorMap[id]?.length || 0;
-}
-
-function getCompletionStats(id, descendantMap, itemsMap) {
-  const descendants = descendantMap[id] || [];
-  const presentDescendants = descendants.filter((d) => itemsMap.has(d));
-  
-  if (presentDescendants.length === 0) return { completed: 0, total: 0 };
-  
-  const completed = presentDescendants.filter(d => itemsMap.get(d).checked).length;
-  return { completed, total: presentDescendants.length };
-}
-
-// 개별 체크리스트 아이템 컴포넌트
 export default function ChecklistItem({
                                         item,
                                         checklist,
@@ -68,14 +63,17 @@ export default function ChecklistItem({
                                         onRemove,
                                         onIncrement,
                                         onDecrement,
-                                        onSettings
+                                        onSettings,
+                                        customLevel = null // 커스텀 레벨 prop 추가
                                       }) {
   const descendants = descendantMap[item.id] || [];
   const ancestors = ancestorMap[item.id] || [];
   const descendantState = getDescendantState(item.id, descendantMap, itemsMap);
   const stats = getCompletionStats(item.id, descendantMap, itemsMap);
   const hasChildren = descendants.some(d => itemsMap.has(d));
-  const level = getItemLevel(item.id, ancestorMap);
+  
+  // customLevel이 제공되면 사용하고, 그렇지 않으면 기존 방식 사용
+  const level = customLevel !== null ? customLevel : getItemLevel(item.id, ancestorMap);
   
   return (
     <div

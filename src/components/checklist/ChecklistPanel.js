@@ -5,11 +5,125 @@ import ChecklistHeader from './ChecklistHeader';
 import ChecklistItem from './ChecklistItem';
 import { RepeatSettingsModal } from './RepeatComponents';
 
-function getItemLevel(id, ancestorMap) {
-  return ancestorMap[id]?.length || 0;
+// 카테고리별 이모지 매핑
+const categoryEmojis = {
+  'cat-groceries': '🛒',
+  'cat-household': '🏠',
+  'cat-electronics': '📱',
+  'sub-vegetables': '🥬',
+  'sub-fruits': '🍎',
+  'sub-cleaning': '🧽',
+  'sub-kitchen': '🍳',
+  'sub-mobile': '📱',
+  'sub-computer': '💻',
+  'item-carrot': '🥕',
+  'item-onion': '🧅',
+  'item-apple': '🍎',
+  'item-banana': '🍌',
+  'item-detergent': '🧴',
+  'item-sponge': '🧽',
+  'item-foil': '📄',
+  'item-wrap': '🎁',
+  'item-phone-case': '📱',
+  'item-charger': '🔌',
+  'item-mouse': '🖱️',
+  'item-keyboard': '⌨️'
+};
+
+// 원본 트리 구조를 기반으로 체크리스트 항목들을 재구성하는 함수
+function buildChecklistTree(allItems, checklistItems, idNameMap) {
+  const itemsMap = new Map(checklistItems.map(item => [item.id, item]));
+  
+  function filterTreeNode(node) {
+    // 현재 노드가 체크리스트에 있는지 확인
+    const hasCurrentItem = itemsMap.has(node.id);
+    
+    // 하위 노드들을 재귀적으로 필터링
+    const filteredChildren = node.children
+      ? node.children.map(filterTreeNode).filter(Boolean)
+      : [];
+    
+    // 현재 노드가 체크리스트에 있거나, 하위에 포함된 항목이 있으면 노드를 유지
+    if (hasCurrentItem || filteredChildren.length > 0) {
+      return {
+        ...node,
+        checklistItem: hasCurrentItem ? itemsMap.get(node.id) : null,
+        children: filteredChildren
+      };
+    }
+    
+    return null;
+  }
+  
+  return allItems.map(filterTreeNode).filter(Boolean);
 }
 
-export default function ChecklistPanel({ idNameMap, descendantMap, ancestorMap }) {
+// 체크리스트 트리 항목 렌더링 컴포넌트
+function ChecklistTreeItem({
+                             node,
+                             checklist,
+                             idNameMap,
+                             descendantMap,
+                             ancestorMap,
+                             itemsMap,
+                             onToggle,
+                             onRemove,
+                             onIncrement,
+                             onDecrement,
+                             onSettings,
+                             level = 0
+                           }) {
+  const emoji = categoryEmojis[node.id] || '📋';
+  const isCategory = level === 0;
+  const isSubCategory = level === 1;
+  
+  return (
+    <div className="space-y-2">
+      {/* 현재 노드가 체크리스트에 있으면 ChecklistItem으로 렌더링 */}
+      {node.checklistItem && (
+        <ChecklistItem
+          item={node.checklistItem}
+          checklist={checklist}
+          idNameMap={idNameMap}
+          descendantMap={descendantMap}
+          ancestorMap={ancestorMap}
+          itemsMap={itemsMap}
+          onToggle={onToggle}
+          onRemove={onRemove}
+          onIncrement={onIncrement}
+          onDecrement={onDecrement}
+          onSettings={onSettings}
+          customLevel={level}
+        />
+      )}
+      
+      {/* 하위 항목들 렌더링 */}
+      {node.children && node.children.length > 0 && (
+        <div className={level > 0 ? "ml-6" : ""}>
+          {node.children.map(child => (
+            <ChecklistTreeItem
+              key={child.id}
+              node={child}
+              checklist={checklist}
+              idNameMap={idNameMap}
+              descendantMap={descendantMap}
+              ancestorMap={ancestorMap}
+              itemsMap={itemsMap}
+              onToggle={onToggle}
+              onRemove={onRemove}
+              onIncrement={onIncrement}
+              onDecrement={onDecrement}
+              onSettings={onSettings}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ChecklistPanel({ allItems, idNameMap, descendantMap, ancestorMap }) {
   const {
     checklists,
     activeId,
@@ -47,13 +161,8 @@ export default function ChecklistPanel({ idNameMap, descendantMap, ancestorMap }
   const itemsMap = new Map(active.items.map((i) => [i.id, i]));
   const progressInfo = getProgressInfo(active.id);
   
-  // 레벨별로 항목 그룹화
-  const itemsByLevel = active.items.reduce((acc, item) => {
-    const level = getItemLevel(item.id, ancestorMap);
-    if (!acc[level]) acc[level] = [];
-    acc[level].push(item);
-    return acc;
-  }, {});
+  // 원본 트리 구조를 기반으로 체크리스트 트리 구성
+  const checklistTree = buildChecklistTree(allItems, active.items, idNameMap);
   
   const handleSaveSettings = (targetCount, currentCount) => {
     if (settingsModal) {
@@ -84,43 +193,23 @@ export default function ChecklistPanel({ idNameMap, descendantMap, ancestorMap }
             <p className="text-sm">좌측에서 원하는 항목을 클릭하여 추가할 수 있습니다</p>
           </div>
         ) : (
-          <div className="p-4 space-y-6">
-            {Object.keys(itemsByLevel)
-              .sort((a, b) => parseInt(a) - parseInt(b))
-              .map((level) => {
-                const levelItems = itemsByLevel[level];
-                
-                return (
-                  <div key={level} className="space-y-3">
-                    {/* 레벨 헤더 (레벨 0 이상만 표시) */}
-                    {parseInt(level) > 0 && (
-                      <div
-                        className="text-xs font-medium text-gray-500 uppercase tracking-wide border-b pb-1"
-                        style={{ paddingLeft: `${parseInt(level) * 12}px` }}
-                      >
-                        Level {level}
-                      </div>
-                    )}
-                    
-                    {levelItems.map((item) => (
-                      <ChecklistItem
-                        key={item.id}
-                        item={item}
-                        checklist={active}
-                        idNameMap={idNameMap}
-                        descendantMap={descendantMap}
-                        ancestorMap={ancestorMap}
-                        itemsMap={itemsMap}
-                        onToggle={toggleCascade}
-                        onRemove={removeItem}
-                        onIncrement={incrementCount}
-                        onDecrement={decrementCount}
-                        onSettings={setSettingsModal}
-                      />
-                    ))}
-                  </div>
-                );
-              })}
+          <div className="p-4 space-y-4">
+            {checklistTree.map(node => (
+              <ChecklistTreeItem
+                key={node.id}
+                node={node}
+                checklist={active}
+                idNameMap={idNameMap}
+                descendantMap={descendantMap}
+                ancestorMap={ancestorMap}
+                itemsMap={itemsMap}
+                onToggle={toggleCascade}
+                onRemove={removeItem}
+                onIncrement={incrementCount}
+                onDecrement={decrementCount}
+                onSettings={setSettingsModal}
+              />
+            ))}
           </div>
         )}
       </div>
