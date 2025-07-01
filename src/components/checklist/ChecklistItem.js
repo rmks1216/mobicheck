@@ -120,9 +120,8 @@ export default function ChecklistItem({
           className="w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-all text-xs font-bold opacity-0 group-hover:opacity-100"
           onClick={(e) => {
             e.stopPropagation();
-            if (confirm(`"${idNameMap[item.id] || item.id}"을(를) 체크리스트에서 제거하시겠습니까?`)) {
-              onRemove(item.id);
-            }
+            // onRemove에서 이미 confirm 처리를 하므로 여기서는 바로 호출
+            onRemove(item.id);
           }}
           title="항목 삭제"
         >

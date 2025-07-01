@@ -172,6 +172,22 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
     }
   };
   
+  const handleRemoveItem = (itemId) => {
+    const descendants = descendantMap[itemId] || [];
+    const hasChildren = descendants.some(d => itemsMap.has(d));
+    
+    let confirmMessage = `"${idNameMap[itemId] || itemId}"을(를) 체크리스트에서 제거하시겠습니까?`;
+    
+    if (hasChildren) {
+      const presentDescendants = descendants.filter(d => itemsMap.has(d));
+      confirmMessage += `\n\n이 항목의 하위 항목 ${presentDescendants.length}개도 함께 삭제됩니다.`;
+    }
+    
+    if (confirm(confirmMessage)) {
+      removeItem(itemId, descendantMap);
+    }
+  };
+  
   return (
     <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col">
       {/* 헤더 */}
@@ -204,7 +220,7 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
                 ancestorMap={ancestorMap}
                 itemsMap={itemsMap}
                 onToggle={toggleCascade}
-                onRemove={removeItem}
+                onRemove={handleRemoveItem}
                 onIncrement={incrementCount}
                 onDecrement={decrementCount}
                 onSettings={setSettingsModal}

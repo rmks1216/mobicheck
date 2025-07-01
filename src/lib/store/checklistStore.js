@@ -162,7 +162,7 @@ export const useChecklistStore = create(
         }),
       
       // 개별 항목 제거
-      removeItem: (itemId) =>
+      removeItem: (itemId, descendantMap) =>
         set((state) => {
           const { activeId, checklists } = state;
           if (!activeId) return state;
@@ -173,7 +173,19 @@ export const useChecklistStore = create(
                 ? c
                 : {
                   ...c,
-                  items: c.items.filter(item => item.id !== itemId),
+                  items: c.items.filter(item => {
+                    // 삭제할 항목 자체인 경우
+                    if (item.id === itemId) return false;
+                    
+                    // descendantMap이 제공된 경우, 하위 항목도 함께 삭제
+                    if (descendantMap && descendantMap[itemId]) {
+                      const descendants = descendantMap[itemId] || [];
+                      // 현재 항목이 삭제될 항목의 하위 항목인지 확인
+                      if (descendants.includes(item.id)) return false;
+                    }
+                    
+                    return true;
+                  }),
                 }
             ),
           };
