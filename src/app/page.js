@@ -20,7 +20,7 @@ export default async function HomePage() {
       {/* 헤더 */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">📋 스마트 체크리스트</h1>
+          <h1 className="text-2xl font-bold text-gray-900">📋 마비노기 모바일 체크리스트 (MobiCheck) Alpha v1.0.0</h1>
           <p className="text-gray-600 text-sm mt-1">항목을 클릭하여 체크리스트에 추가하고 관리하세요</p>
         </div>
       </header>
