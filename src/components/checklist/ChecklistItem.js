@@ -29,27 +29,31 @@ function getItemLevel(id, ancestorMap) {
 
 // 카테고리별 이모지 매핑
 const itemEmojis = {
-  'cat-groceries': '🛒',
-  'cat-household': '🏠',
-  'cat-electronics': '📱',
-  'sub-vegetables': '🥬',
-  'sub-fruits': '🍎',
-  'sub-cleaning': '🧽',
-  'sub-kitchen': '🍳',
-  'sub-mobile': '📱',
-  'sub-computer': '💻',
-  'item-carrot': '🥕',
-  'item-onion': '🧅',
-  'item-apple': '🍎',
-  'item-banana': '🍌',
-  'item-detergent': '🧴',
-  'item-sponge': '🧽',
-  'item-foil': '📄',
-  'item-wrap': '🎁',
-  'item-phone-case': '📱',
-  'item-charger': '🔌',
-  'item-mouse': '🖱️',
-  'item-keyboard': '⌨️'
+  // 메인 카테고리
+  'duty': '📋',
+  
+  // 지역별 서브 카테고리
+  'dunbarton': '🏰',
+  'tyrconail': '🌲',
+  'colen': '🌊',
+  
+  // 던바튼 항목들
+  'dunbarton01': '🧃',
+  'dunbarton02': '🍄',
+  'dunbarton03': '🥛',
+  'dunbarton04': '⛏️',
+  
+  // 티르코네일 항목들
+  'tyrconail01': '🍳',
+  'tyrconail02': '🕷️',
+  'tyrconail03': '🐑',
+  'tyrconail04': '🌿',
+  
+  // 콜헨 항목들
+  'colen01': '🦪',
+  'colen02': '🌸',
+  'colen03': '🥚',
+  'colen04': '🪵'
 };
 
 export default function ChecklistItem({
