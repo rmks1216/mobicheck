@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import ItemsPanel from '@/components/ItemsPanel';
-import ChecklistTabs from '@/components/ChecklistTabs';
-import ChecklistPanel from '@/components/ChecklistPanel';
+import ChecklistTabs from '@/components/checklist/ChecklistTabs';
+import ChecklistPanel from '@/components/checklist/ChecklistPanel';
 import {buildMaps} from '@/lib/utils/treeMaps';
 
 async function getItems() {

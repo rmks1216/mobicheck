@@ -4,17 +4,18 @@ import Cookies from 'js-cookie';
 import { v4 as uuid } from 'uuid';
 
 /**
- * checklist 구조 (업데이트됨)
+ * 개선된 checklist 구조
  * checklists: [
  *   {
  *     id,              // uuid
  *     name,            // 문자열
+ *     mode,            // 'simple' | 'repeat' - 체크리스트 모드
  *     items: [         // 담긴 항목(상위·하위 모두 포함)
  *       {
  *         id,           // string
- *         checked,      // boolean (targetCount에 도달했는지)
- *         targetCount,  // number (목표 횟수, 기본값: 1)
- *         currentCount  // number (현재 횟수, 기본값: 0)
+ *         checked,      // boolean
+ *         targetCount,  // number (반복 모드에서만 사용, 기본값: 1)
+ *         currentCount  // number (반복 모드에서만 사용, 기본값: 0)
  *       }
  *     ]
  *   },
@@ -35,6 +36,7 @@ export const useChecklistStore = create(
         set((state) => ({
           checklists: state.checklists.map(checklist => ({
             ...checklist,
+            mode: checklist.mode || 'simple', // 기본값 설정
             items: checklist.items.map(item => ({
               id: item.id,
               checked: item.checked || false,
@@ -45,11 +47,11 @@ export const useChecklistStore = create(
         })),
       
       /* ───────── checklist 관리 ───────── */
-      addChecklist: (name = '새 체크리스트') =>
+      addChecklist: (name = '새 체크리스트', mode = 'simple') =>
         set((state) => {
           const id = uuid();
           return {
-            checklists: [...state.checklists, { id, name, items: [] }],
+            checklists: [...state.checklists, { id, name, mode, items: [] }],
             activeId: id,
           };
         }),
@@ -60,6 +62,26 @@ export const useChecklistStore = create(
         set((state) => ({
           checklists: state.checklists.map((c) =>
             c.id === id ? { ...c, name } : c
+          ),
+        })),
+      
+      // 체크리스트 모드 변경
+      setChecklistMode: (id, mode) =>
+        set((state) => ({
+          checklists: state.checklists.map((c) =>
+            c.id === id
+              ? {
+                ...c,
+                mode,
+                // 모드 변경 시 항목들을 적절히 초기화
+                items: c.items.map(item => ({
+                  ...item,
+                  checked: mode === 'simple' ? false : item.currentCount >= item.targetCount,
+                  currentCount: mode === 'simple' ? 0 : item.currentCount,
+                  targetCount: mode === 'simple' ? 1 : (item.targetCount || 1)
+                }))
+              }
+              : c
           ),
         })),
       
@@ -108,6 +130,9 @@ export const useChecklistStore = create(
           const { activeId, checklists } = state;
           if (!activeId) return state;
           
+          const activeChecklist = checklists.find(c => c.id === activeId);
+          if (!activeChecklist) return state;
+          
           return {
             checklists: checklists.map((c) =>
               c.id !== activeId
@@ -122,7 +147,7 @@ export const useChecklistStore = create(
                       .map((id) => ({
                         id,
                         checked: false,
-                        targetCount: 1,
+                        targetCount: c.mode === 'repeat' ? 1 : 1,
                         currentCount: 0
                       })),
                   ].sort(
@@ -154,7 +179,7 @@ export const useChecklistStore = create(
           };
         }),
       
-      // 새로 추가: 항목의 목표 횟수 설정
+      // 항목의 목표 횟수 설정 (반복 모드에서만)
       setTargetCount: (itemId, targetCount) =>
         set((state) => {
           const { activeId, checklists } = state;
@@ -171,7 +196,10 @@ export const useChecklistStore = create(
                       ? {
                         ...item,
                         targetCount: Math.max(1, targetCount),
-                        checked: item.currentCount >= Math.max(1, targetCount)
+                        currentCount: Math.min(item.currentCount, targetCount),
+                        checked: c.mode === 'repeat'
+                          ? Math.min(item.currentCount, targetCount) >= targetCount
+                          : item.checked
                       }
                       : item
                   ),
@@ -180,59 +208,7 @@ export const useChecklistStore = create(
           };
         }),
       
-      // 새로 추가: 항목 카운트 증가
-      incrementCount: (itemId) =>
-        set((state) => {
-          const { activeId, checklists } = state;
-          if (!activeId) return state;
-          
-          return {
-            checklists: checklists.map((c) =>
-              c.id !== activeId
-                ? c
-                : {
-                  ...c,
-                  items: c.items.map(item =>
-                    item.id === itemId
-                      ? {
-                        ...item,
-                        currentCount: Math.min(item.currentCount + 1, item.targetCount),
-                        checked: (item.currentCount + 1) >= item.targetCount
-                      }
-                      : item
-                  ),
-                }
-            ),
-          };
-        }),
-      
-      // 새로 추가: 항목 카운트 감소
-      decrementCount: (itemId) =>
-        set((state) => {
-          const { activeId, checklists } = state;
-          if (!activeId) return state;
-          
-          return {
-            checklists: checklists.map((c) =>
-              c.id !== activeId
-                ? c
-                : {
-                  ...c,
-                  items: c.items.map(item =>
-                    item.id === itemId
-                      ? {
-                        ...item,
-                        currentCount: Math.max(0, item.currentCount - 1),
-                        checked: Math.max(0, item.currentCount - 1) >= item.targetCount
-                      }
-                      : item
-                  ),
-                }
-            ),
-          };
-        }),
-      
-      // 새로 추가: 항목 카운트 직접 설정
+      // 항목의 현재 횟수 설정 (반복 모드에서만)
       setCurrentCount: (itemId, currentCount) =>
         set((state) => {
           const { activeId, checklists } = state;
@@ -249,7 +225,9 @@ export const useChecklistStore = create(
                       ? {
                         ...item,
                         currentCount: Math.max(0, Math.min(currentCount, item.targetCount)),
-                        checked: Math.max(0, Math.min(currentCount, item.targetCount)) >= item.targetCount
+                        checked: c.mode === 'repeat'
+                          ? Math.max(0, Math.min(currentCount, item.targetCount)) >= item.targetCount
+                          : item.checked
                       }
                       : item
                   ),
@@ -258,7 +236,63 @@ export const useChecklistStore = create(
           };
         }),
       
-      /* ───────── 체크 / 해제 (연쇄) - 업데이트됨 ───────── */
+      // 카운트 증가 (반복 모드에서만)
+      incrementCount: (itemId) =>
+        set((state) => {
+          const { activeId, checklists } = state;
+          if (!activeId) return state;
+          
+          return {
+            checklists: checklists.map((c) =>
+              c.id !== activeId
+                ? c
+                : {
+                  ...c,
+                  items: c.items.map(item =>
+                    item.id === itemId
+                      ? {
+                        ...item,
+                        currentCount: Math.min(item.currentCount + 1, item.targetCount),
+                        checked: c.mode === 'repeat'
+                          ? Math.min(item.currentCount + 1, item.targetCount) >= item.targetCount
+                          : item.checked
+                      }
+                      : item
+                  ),
+                }
+            ),
+          };
+        }),
+      
+      // 카운트 감소 (반복 모드에서만)
+      decrementCount: (itemId) =>
+        set((state) => {
+          const { activeId, checklists } = state;
+          if (!activeId) return state;
+          
+          return {
+            checklists: checklists.map((c) =>
+              c.id !== activeId
+                ? c
+                : {
+                  ...c,
+                  items: c.items.map(item =>
+                    item.id === itemId
+                      ? {
+                        ...item,
+                        currentCount: Math.max(0, item.currentCount - 1),
+                        checked: c.mode === 'repeat'
+                          ? Math.max(0, item.currentCount - 1) >= item.targetCount
+                          : item.checked
+                      }
+                      : item
+                  ),
+                }
+            ),
+          };
+        }),
+      
+      /* ───────── 체크 / 해제 (연쇄) - 모드별 처리 ───────── */
       toggleCascade: (itemId, descendants, ancestors, descMap) =>
         set((state) => {
           const { activeId, checklists } = state;
@@ -280,7 +314,6 @@ export const useChecklistStore = create(
               const clickedItem = items.find((i) => i.id === itemId);
               if (!clickedItem) return c;
               
-              // 체크된 상태면 카운트를 0으로, 아니면 목표값으로 설정
               const nowChecked = !clickedItem.checked;
               
               targetIds.forEach((id) => {
@@ -290,7 +323,10 @@ export const useChecklistStore = create(
                   items[idx] = {
                     ...item,
                     checked: nowChecked,
-                    currentCount: nowChecked ? item.targetCount : 0
+                    // 모드에 따른 카운트 처리
+                    currentCount: c.mode === 'simple'
+                      ? (nowChecked ? 1 : 0)
+                      : (nowChecked ? item.targetCount : 0)
                   };
                 }
               });
@@ -314,7 +350,9 @@ export const useChecklistStore = create(
                 items[pIdx] = {
                   ...parentItem,
                   checked: allChecked,
-                  currentCount: allChecked ? parentItem.targetCount : 0
+                  currentCount: c.mode === 'simple'
+                    ? (allChecked ? 1 : 0)
+                    : (allChecked ? parentItem.targetCount : 0)
                 };
               });
               
@@ -323,25 +361,60 @@ export const useChecklistStore = create(
           };
         }),
       
-      // 진행률 계산 헬퍼
+      // 통합된 진행률 계산 (모드에 따라 다르게 계산)
       getProgress: (checklistId) => {
         const checklist = get().checklists.find(c => c.id === checklistId);
         if (!checklist || checklist.items.length === 0) return 0;
         
-        const completed = checklist.items.filter(item => item.checked).length;
-        return Math.round((completed / checklist.items.length) * 100);
+        if (checklist.mode === 'simple') {
+          // 간단 모드: 체크된 항목 수 / 전체 항목 수
+          const completed = checklist.items.filter(item => item.checked).length;
+          return Math.round((completed / checklist.items.length) * 100);
+        } else {
+          // 반복 모드: 현재 카운트 합계 / 목표 카운트 합계
+          const totalTarget = checklist.items.reduce((sum, item) => sum + item.targetCount, 0);
+          const totalCurrent = checklist.items.reduce((sum, item) => sum + item.currentCount, 0);
+          
+          return totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
+        }
       },
       
-      // 새로 추가: 전체 완료도 계산 (카운트 기반)
-      getTotalProgress: (checklistId) => {
+      // 진행률 정보 상세 조회
+      getProgressInfo: (checklistId) => {
         const checklist = get().checklists.find(c => c.id === checklistId);
-        if (!checklist || checklist.items.length === 0) return 0;
+        if (!checklist) return null;
         
-        const totalTarget = checklist.items.reduce((sum, item) => sum + item.targetCount, 0);
-        const totalCurrent = checklist.items.reduce((sum, item) => sum + item.currentCount, 0);
+        const progress = get().getProgress(checklistId);
+        const totalItems = checklist.items.length;
         
-        return totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
+        if (checklist.mode === 'simple') {
+          const completedItems = checklist.items.filter(item => item.checked).length;
+          return {
+            mode: 'simple',
+            progress,
+            totalItems,
+            completedItems,
+            description: `${completedItems}/${totalItems} 항목 완료`
+          };
+        } else {
+          const totalTarget = checklist.items.reduce((sum, item) => sum + item.targetCount, 0);
+          const totalCurrent = checklist.items.reduce((sum, item) => sum + item.currentCount, 0);
+          const completedItems = checklist.items.filter(item => item.checked).length;
+          
+          return {
+            mode: 'repeat',
+            progress,
+            totalItems,
+            completedItems,
+            totalCurrent,
+            totalTarget,
+            description: `${totalCurrent}/${totalTarget} 회 완료 (${completedItems}/${totalItems} 항목 달성)`
+          };
+        }
       },
+      
+      // 레거시 지원을 위한 getTotalProgress (이제 getProgress와 동일)
+      getTotalProgress: (checklistId) => get().getProgress(checklistId),
     }),
     {
       name: 'checklists',
