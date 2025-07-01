@@ -1,5 +1,4 @@
 'use client';
-import TreeItem from './TreeItem';
 import {useChecklistStore} from '@/lib/store/checklistStore';
 
 // 카테고리별 이모지 매핑
@@ -71,8 +70,9 @@ function EnhancedTreeItem({node, onSelect, level = 0}) {
         </div>
       </button>
       
+      {/* 수정된 부분: ul로 감싸서 li가 li 안에 직접 들어가지 않도록 함 */}
       {node.children?.length > 0 && (
-        <div className={level === 0 ? 'tree-line mt-2' : 'ml-6 mt-2'}>
+        <ul className={level === 0 ? 'tree-line mt-2' : 'ml-6 mt-2'}>
           {node.children.map((child) => (
             <EnhancedTreeItem
               key={child.id}
@@ -81,7 +81,7 @@ function EnhancedTreeItem({node, onSelect, level = 0}) {
               level={level + 1}
             />
           ))}
-        </div>
+        </ul>
       )}
     </li>
   );

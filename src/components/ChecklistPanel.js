@@ -28,7 +28,9 @@ const itemEmojis = {
 };
 
 function getDescendantState(id, descendantMap, itemsMap) {
-  const present = descendantMap[id].filter((d) => itemsMap.has(d));
+  // descendantMap[id]가 undefined일 수 있으므로 안전하게 처리
+  const descendants = descendantMap[id] || [];
+  const present = descendants.filter((d) => itemsMap.has(d));
   
   if (present.length === 0) return { all: false, some: false };
   
@@ -52,11 +54,14 @@ function calculateProgress(items) {
 }
 
 function getCompletionStats(id, descendantMap, itemsMap) {
-  const descendants = descendantMap[id].filter((d) => itemsMap.has(d));
-  if (descendants.length === 0) return { completed: 0, total: 0 };
+  // descendantMap[id]가 undefined일 수 있으므로 안전하게 처리
+  const descendants = descendantMap[id] || [];
+  const presentDescendants = descendants.filter((d) => itemsMap.has(d));
   
-  const completed = descendants.filter(d => itemsMap.get(d).checked).length;
-  return { completed, total: descendants.length };
+  if (presentDescendants.length === 0) return { completed: 0, total: 0 };
+  
+  const completed = presentDescendants.filter(d => itemsMap.get(d).checked).length;
+  return { completed, total: presentDescendants.length };
 }
 
 export default function ChecklistPanel({idNameMap, descendantMap, ancestorMap}) {
@@ -141,8 +146,8 @@ export default function ChecklistPanel({idNameMap, descendantMap, ancestorMap}) 
                       onChange={() =>
                         toggleCascade(
                           item.id,
-                          descendantMap[item.id],
-                          ancestorMap[item.id],
+                          descendantMap[item.id] || [],
+                          ancestorMap[item.id] || [],
                           descendantMap
                         )
                       }
@@ -184,8 +189,8 @@ export default function ChecklistPanel({idNameMap, descendantMap, ancestorMap}) 
                               onChange={() =>
                                 toggleCascade(
                                   subItem.id,
-                                  descendantMap[subItem.id],
-                                  ancestorMap[subItem.id],
+                                  descendantMap[subItem.id] || [],
+                                  ancestorMap[subItem.id] || [],
                                   descendantMap
                                 )
                               }
@@ -224,14 +229,14 @@ export default function ChecklistPanel({idNameMap, descendantMap, ancestorMap}) 
                                     onChange={() =>
                                       toggleCascade(
                                         leafItem.id,
-                                        descendantMap[leafItem.id],
-                                        ancestorMap[leafItem.id],
+                                        descendantMap[leafItem.id] || [],
+                                        ancestorMap[leafItem.id] || [],
                                         descendantMap
                                       )
                                     }
                                   />
                                   <span className="text-sm">{leafEmoji}</span>
-                                  <span className={`text-sm ${leafItem.checked ? 'text-gray-500 line-through' : 'text-gray-600'}`}>
+                                  <span className={`text-sm ${leafItem.checked ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
                                     {idNameMap[leafItem.id]}
                                   </span>
                                 </div>
@@ -248,36 +253,6 @@ export default function ChecklistPanel({idNameMap, descendantMap, ancestorMap}) 
           </div>
         )}
       </div>
-      
-      {/* 하단 액션 버튼 */}
-      {active.items.length > 0 && (
-        <div className="p-6 border-t bg-gray-50">
-          <div className="flex gap-3">
-            <button
-              className="flex-1 bg-yellow-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors flex items-center justify-center gap-2"
-              onClick={() => {
-                if (confirm('모든 항목의 체크를 해제하시겠습니까?')) {
-                  uncheckAllItems(activeId);
-                }
-              }}
-            >
-              <span>↩️</span>
-              체크 해제
-            </button>
-            <button
-              className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-              onClick={() => {
-                if (confirm('정말로 모든 항목을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) {
-                  clearChecklist(activeId);
-                }
-              }}
-            >
-              <span>🗑️</span>
-              전체 삭제
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
