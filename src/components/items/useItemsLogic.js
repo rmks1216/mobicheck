@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { categoryConfig } from './constants';
 
-export function useItemsLogic({ allItems, addItems, ancestorMap, descendantMap, checklists, activeId }) {
+export default function useItemsLogic({ allItems, addItems, ancestorMap, descendantMap, checklists, activeId }) {
   // 상태 관리
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');

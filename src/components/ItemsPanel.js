@@ -1,37 +1,17 @@
 'use client';
-import { useState, useMemo, useEffect, Suspense } from 'react';
-import { useChecklistStore } from '@/lib/store/checklistStore';
-import { useResponsive } from '../hooks/useResponsive';
 
-// 동적 임포트로 코드 스플리팅
-import dynamic from 'next/dynamic';
-
-const SearchBar = dynamic(() => import('./items/SearchBar'), {
-  loading: () => <div className="h-20 bg-gray-100 animate-pulse rounded-lg" />
-});
-
-const QuickAccessPanel = dynamic(() => import('./items/QuickAccessPanel'), {
-  loading: () => <div className="h-24 bg-gray-100 animate-pulse" />
-});
-
-const TreeItem = dynamic(() => import('./items/TreeItem'), {
-  loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-2" />
-});
-
-const ContextMenu = dynamic(() => import('./items/ContextMenu'));
-const MobileItemsPanel = dynamic(() => import('./items/MobileItemsPanel'));
-const VirtualizedList = dynamic(() => import('./items/VirtualizedList'));
-
-import { useItemsLogic } from './items/useItemsLogic';
+import { useState, useCallback, Suspense, lazy, useEffect } from 'react';
+import TreeItem from './items/TreeItem';
+import SearchBar from './items/SearchBar';
+import useItemsLogic from './items/useItemsLogic';
 import { categoryConfig } from './items/constants';
 
-export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
-  const { addItems, checklists, activeId } = useChecklistStore();
-  const { isMobile, isTablet } = useResponsive();
-  const [viewMode, setViewMode] = useState('tree'); // 'tree', 'grid', 'compact'
-  const [isVirtualized, setIsVirtualized] = useState(false);
-  
-  // 커스텀 훅으로 로직 분리
+// 동적 임포트
+const QuickAccessPanel = lazy(() => import('./items/QuickAccessPanel'));
+const ContextMenu = lazy(() => import('./items/ContextMenu'));
+const VirtualizedList = lazy(() => import('./items/VirtualizedList'));
+
+export default function ItemsPanel({ allItems, isMobile = false, isTablet = false }) {
   const {
     searchTerm,
     setSearchTerm,
@@ -39,58 +19,178 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
     setFilterCategory,
     expandedItems,
     selectedItems,
-    setSelectedItems,
     isMultiSelect,
     setIsMultiSelect,
     recentItems,
     favoriteItems,
-    contextMenu,
-    setContextMenu,
     usageStats,
+    searchOptions,
+    searchResults,
     filteredItems,
-    currentChecklistItems,
     categories,
-    handleToggleExpand,
-    handleItemSelect,
+    currentChecklistItems,
     handleSelect,
     handleAddSelected,
     handleToggleFavorite,
-    handleContextMenu,
-    findItemById
-  } = useItemsLogic({ allItems, addItems, ancestorMap, descendantMap, checklists, activeId });
+    handleToggleExpand,
+    handleItemSelect,
+    expandAll,
+    collapseAll,
+    toggleSearchOption,
+    renderHighlightedText
+  } = useItemsLogic({ allItems });
   
-  // 성능 모니터링
-  const [performanceMetrics, setPerformanceMetrics] = useState({
-    renderTime: 0,
-    itemCount: 0,
-    lastUpdate: Date.now()
-  });
+  const [viewMode, setViewMode] = useState('tree');
+  const [contextMenu, setContextMenu] = useState(null);
+  const [isVirtualized, setIsVirtualized] = useState(false);
+  const [performanceMetrics, setPerformanceMetrics] = useState(null);
+  
+  // 컨텍스트 메뉴 핸들러
+  const handleContextMenu = useCallback((e, item) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      item
+    });
+  }, []);
+  
+  // 렌더링 함수들
+  const renderTreeView = useCallback(() => {
+    if (isVirtualized && filteredItems.length > 100) {
+      return (
+        <Suspense fallback={<div className="p-4 text-center">로딩 중...</div>}>
+          <VirtualizedList
+            items={filteredItems}
+            containerHeight={600}
+            renderItem={(item) => (
+              <TreeItem
+                node={item}
+                onSelect={handleSelect}
+                level={0}
+                isExpanded={expandedItems.has(item.id)}
+                onToggleExpand={handleToggleExpand}
+                selectedItems={selectedItems}
+                onItemSelect={handleItemSelect}
+                isMultiSelect={isMultiSelect}
+                onContextMenu={handleContextMenu}
+                onToggleFavorite={handleToggleFavorite}
+                expandedItems={expandedItems}
+                currentChecklistItems={currentChecklistItems}
+                usageStats={usageStats}
+                renderHighlightedText={renderHighlightedText}
+                searchPath={item.path}
+              />
+            )}
+          />
+        </Suspense>
+      );
+    }
+    
+    return (
+      <div className="overflow-y-auto custom-scrollbar p-4">
+        <ul>
+          {filteredItems.map((node) => (
+            <TreeItem
+              key={node.id}
+              node={node}
+              onSelect={handleSelect}
+              level={0}
+              isExpanded={expandedItems.has(node.id)}
+              onToggleExpand={handleToggleExpand}
+              selectedItems={selectedItems}
+              onItemSelect={handleItemSelect}
+              isMultiSelect={isMultiSelect}
+              onContextMenu={handleContextMenu}
+              onToggleFavorite={handleToggleFavorite}
+              expandedItems={expandedItems}
+              currentChecklistItems={currentChecklistItems}
+              usageStats={usageStats}
+              renderHighlightedText={renderHighlightedText}
+              searchPath={node.path}
+            />
+          ))}
+        </ul>
+      </div>
+    );
+  }, [filteredItems, isVirtualized, expandedItems, selectedItems, isMultiSelect, currentChecklistItems, usageStats, handleSelect, handleToggleExpand, handleItemSelect, handleContextMenu, handleToggleFavorite, renderHighlightedText]);
+  
+  const renderGridView = useCallback(() => {
+    return (
+      <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {filteredItems.map((item) => {
+          const config = categoryConfig[item.id] || {};
+          const isInChecklist = currentChecklistItems?.some(i => i.id === item.id);
+          const displayName = config.name || item.name;
+          const renderedName = item.highlightIndices && renderHighlightedText
+            ? renderHighlightedText(displayName, item.highlightIndices)
+            : displayName;
+          
+          return (
+            <div
+              key={item.id}
+              onClick={() => handleSelect(item.id)}
+              onContextMenu={(e) => handleContextMenu(e, item)}
+              className={`
+                p-4 border rounded-lg cursor-pointer transition-all
+                ${item.matchedText ? 'ring-2 ring-yellow-400 ring-opacity-30' : ''}
+                ${isInChecklist ? 'bg-green-50 border-green-300' : 'bg-white hover:shadow-md'}
+              `}
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">{config.emoji}</div>
+                <div className="text-sm font-medium truncate">{renderedName}</div>
+                {item.children && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {item.children.length} 항목
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [filteredItems, currentChecklistItems, handleSelect, handleContextMenu, renderHighlightedText]);
+  
+  const renderCompactView = useCallback(() => {
+    return (
+      <div className="p-4">
+        {filteredItems.map((item) => {
+          const config = categoryConfig[item.id] || {};
+          const isInChecklist = currentChecklistItems?.some(i => i.id === item.id);
+          const displayName = config.name || item.name;
+          const renderedName = item.highlightIndices && renderHighlightedText
+            ? renderHighlightedText(displayName, item.highlightIndices)
+            : displayName;
+          
+          return (
+            <div
+              key={item.id}
+              onClick={() => handleSelect(item.id)}
+              onContextMenu={(e) => handleContextMenu(e, item)}
+              className={`
+                px-3 py-2 border-b cursor-pointer transition-colors flex items-center gap-3
+                ${item.matchedText ? 'bg-yellow-50' : ''}
+                ${isInChecklist ? 'bg-green-50' : 'hover:bg-gray-50'}
+              `}
+            >
+              <span className="text-lg">{config.emoji}</span>
+              <span className="flex-1 text-sm">{renderedName}</span>
+              {isInChecklist && (
+                <span className="text-xs text-green-600">✓</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [filteredItems, currentChecklistItems, handleSelect, handleContextMenu, renderHighlightedText]);
   
   // 가상화 모드 자동 전환
   useEffect(() => {
-    if (filteredItems.length > 100) {
-      setIsVirtualized(true);
-    } else {
-      setIsVirtualized(false);
-    }
+    setIsVirtualized(filteredItems.length > 100);
   }, [filteredItems.length]);
-  
-  // 성능 측정
-  useEffect(() => {
-    const startTime = performance.now();
-    
-    const measureRender = () => {
-      const endTime = performance.now();
-      setPerformanceMetrics({
-        renderTime: endTime - startTime,
-        itemCount: filteredItems.length,
-        lastUpdate: Date.now()
-      });
-    };
-    
-    const timeoutId = setTimeout(measureRender, 0);
-    return () => clearTimeout(timeoutId);
-  }, [filteredItems]);
   
   // 키보드 단축키
   useEffect(() => {
@@ -140,121 +240,17 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isMultiSelect, filteredItems]);
   
-  // 모바일/태블릿에서는 별도 컴포넌트 사용
-  if (isMobile || isTablet) {
-    return (
-      <Suspense fallback={<div className="h-full bg-gray-100 animate-pulse rounded-xl" />}>
-        <MobileItemsPanel
-          allItems={allItems}
-          descendantMap={descendantMap}
-          ancestorMap={ancestorMap}
-        />
-      </Suspense>
-    );
-  }
-  
-  // TreeItem 렌더링 함수 (가상화용)
-  const renderTreeItem = (node, index) => (
-    <TreeItem
-      key={node.id}
-      node={node}
-      onSelect={handleSelect}
-      level={0}
-      isExpanded={expandedItems.has(node.id)}
-      onToggleExpand={handleToggleExpand}
-      selectedItems={selectedItems}
-      onItemSelect={handleItemSelect}
-      isMultiSelect={isMultiSelect}
-      onContextMenu={handleContextMenu}
-      onToggleFavorite={handleToggleFavorite}
-      // expandedItems 전체를 전달하여 하위 컴포넌트에서 참조 가능하게 함
-      expandedItems={expandedItems}
-      // 개별 상태 계산을 위한 추가 props
-      currentChecklistItems={currentChecklistItems}
-      usageStats={usageStats}
-    />
-  );
-  
-  
-  // 그리드 뷰 렌더링
-  const renderGridView = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-      {filteredItems.map((node) => (
-        <div
-          key={node.id}
-          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
-          onClick={() => handleSelect(node.id)}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">{categoryConfig[node.id]?.emoji || '📄'}</span>
-            <h3 className="font-medium text-gray-900">{categoryConfig[node.id]?.name || node.name}</h3>
-          </div>
-          {node.children && (
-            <p className="text-sm text-gray-500">{node.children.length}개 하위 항목</p>
-          )}
-          {usageStats.get(node.id) > 0 && (
-            <div className="mt-2">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-700">
-                🔥 {usageStats.get(node.id)}회 사용
-              </span>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-  
-  // 컴팩트 뷰 렌더링
-  const renderCompactView = () => (
-    <div className="p-4">
-      {filteredItems.map((node) => (
-        <div
-          key={node.id}
-          className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-          onClick={() => handleSelect(node.id)}
-        >
-          <span className="text-lg">{categoryConfig[node.id]?.emoji || '📄'}</span>
-          <span className="flex-1 text-sm">{categoryConfig[node.id]?.name || node.name}</span>
-          {node.children && (
-            <span className="text-xs text-gray-500">{node.children.length}</span>
-          )}
-          {currentChecklistItems.has(node.id) && (
-            <span className="text-green-500">✓</span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-  
   return (
     <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col">
       {/* 헤더 */}
-      <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              🗂️ 전체 항목
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              카테고리를 클릭하면 하위 항목까지 모두 추가됩니다
-            </p>
-          </div>
+      <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-blue-900">항목 브라우저</h2>
           
-          {/* 성능 지표 (개발 모드에서만) */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-gray-500 bg-white rounded-lg p-2">
-              <div>렌더링: {performanceMetrics.renderTime.toFixed(2)}ms</div>
-              <div>항목 수: {performanceMetrics.itemCount}</div>
-              {isVirtualized && <div>가상화: ON</div>}
-            </div>
-          )}
-        </div>
-        
-        {/* 컨트롤 바 */}
-        <div className="flex items-center justify-between">
+          {/* 툴바 */}
           <div className="flex items-center gap-2">
-            {/* 뷰 모드 전환 */}
-            <div className="flex bg-white rounded-lg p-1 border">
+            {/* 뷰 모드 선택 */}
+            <div className="flex items-center bg-white rounded-lg shadow-sm border p-1">
               <button
                 onClick={() => setViewMode('tree')}
                 className={`px-3 py-1 text-xs rounded transition-colors ${
@@ -283,6 +279,26 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
                 ☰ 목록
               </button>
             </div>
+            
+            {/* 확장/축소 버튼 */}
+            {viewMode === 'tree' && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={expandAll}
+                  className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  title="모두 펼치기"
+                >
+                  ⊞
+                </button>
+                <button
+                  onClick={collapseAll}
+                  className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  title="모두 접기"
+                >
+                  ⊟
+                </button>
+              </div>
+            )}
             
             {/* 가상화 토글 */}
             {filteredItems.length > 50 && (
@@ -336,64 +352,34 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
       </Suspense>
       
       {/* 검색 및 필터 */}
-      <Suspense fallback={<div className="h-20 bg-gray-100 animate-pulse" />}>
-        <SearchBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          filterCategory={filterCategory}
-          onFilterChange={setFilterCategory}
-          categories={categories}
-        />
-      </Suspense>
+      <SearchBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filterCategory={filterCategory}
+        onFilterChange={setFilterCategory}
+        categories={categories}
+        searchOptions={searchOptions}
+        onToggleSearchOption={toggleSearchOption}
+        searchResults={searchResults}
+      />
       
       {/* 항목 리스트 */}
       <div className="flex-1 overflow-hidden">
         {filteredItems.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <div className="text-4xl mb-4">🔍</div>
-            <p className="text-lg font-medium mb-2">검색 결과가 없습니다</p>
-            <p className="text-sm">다른 검색어를 시도해보세요</p>
+            <p className="text-lg font-medium mb-2">
+              {searchTerm ? '검색 결과가 없습니다' : '항목이 없습니다'}
+            </p>
+            <p className="text-sm">
+              {searchTerm ? '다른 검색어를 시도해보세요' : '카테고리를 선택해보세요'}
+            </p>
           </div>
         ) : (
           <>
-            {viewMode === 'tree' && (
-              <div className="overflow-y-auto custom-scrollbar p-4">
-                <ul>
-                  {filteredItems.map((node) => (
-                    <TreeItem
-                      key={node.id}
-                      node={node}
-                      onSelect={handleSelect}
-                      level={0}
-                      isExpanded={expandedItems.has(node.id)}
-                      onToggleExpand={handleToggleExpand}
-                      selectedItems={selectedItems}
-                      onItemSelect={handleItemSelect}
-                      isMultiSelect={isMultiSelect}
-                      onContextMenu={handleContextMenu}
-                      onToggleFavorite={handleToggleFavorite}
-                      // expandedItems 전체를 전달
-                      expandedItems={expandedItems}
-                      // 개별 상태 계산을 위한 추가 props
-                      currentChecklistItems={currentChecklistItems}
-                      usageStats={usageStats}
-                    />
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {viewMode === 'grid' && (
-              <div className="overflow-y-auto custom-scrollbar">
-                {renderGridView()}
-              </div>
-            )}
-            
-            {viewMode === 'compact' && (
-              <div className="overflow-y-auto custom-scrollbar">
-                {renderCompactView()}
-              </div>
-            )}
+            {viewMode === 'tree' && renderTreeView()}
+            {viewMode === 'grid' && renderGridView()}
+            {viewMode === 'compact' && renderCompactView()}
           </>
         )}
       </div>
@@ -403,6 +389,7 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
         <span>
           {filteredItems.length}개 항목
           {searchTerm && ` (전체 ${allItems.length}개 중)`}
+          {searchResults && ` - ${searchResults.length}개 매칭`}
         </span>
         <span>
           단축키: Ctrl+F (검색), Ctrl+1-3 (뷰 변경), Esc (취소)
@@ -426,12 +413,19 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
               setContextMenu(null);
             }}
             onViewDetails={() => {
-              // 상세 정보 모달 표시 로직
               console.log('View details for:', contextMenu.item);
               setContextMenu(null);
             }}
           />
         </Suspense>
+      )}
+      
+      {/* 성능 메트릭 (개발 모드에서만) */}
+      {process.env.NODE_ENV === 'development' && performanceMetrics && (
+        <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
+          <div>렌더 시간: {performanceMetrics.renderTime.toFixed(2)}ms</div>
+          <div>항목 수: {performanceMetrics.itemCount}</div>
+        </div>
       )}
     </div>
   );
