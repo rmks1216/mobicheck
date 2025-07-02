@@ -52,7 +52,12 @@ const TreeItem = memo(function TreeItem({
   
   const handleContextMenuClick = (e) => {
     e.preventDefault();
-    onContextMenu?.(e, node);
+    // useItemsLogic 훅이 기대하는 형태로 객체를 넘깁니다.
+    onContextMenu?.({
+      x: e.clientX,
+      y: e.clientY,
+      item: node
+    });
   };
   
   return (

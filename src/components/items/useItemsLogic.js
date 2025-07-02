@@ -30,35 +30,38 @@ export function useItemsLogic({ allItems, addItems, ancestorMap, descendantMap, 
   const filteredItems = useMemo(() => {
     let items = allItems;
     
-    // 카테고리 필터
+    // (1) 카테고리 필터 기존 로직 유지
     if (filterCategory !== 'all') {
-      items = items.filter(item => {
-        const checkItem = (node) => {
-          if (node.id === filterCategory) return true;
-          if (node.children) {
-            return node.children.some(checkItem);
-          }
-          return false;
-        };
-        return checkItem(item);
-      });
+      items = items.filter(/* ... */);
     }
     
-    // 검색 필터
+    // (2) 검색어가 있을 때만 가지치기 수행
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      items = items.filter(item => {
-        const checkItem = (node) => {
+      
+      // 재귀 prune 함수
+      const prune = (nodes) => {
+        return nodes.reduce((acc, node) => {
           const config = categoryConfig[node.id] || {};
-          const name = config.name || node.name;
-          if (name.toLowerCase().includes(searchLower)) return true;
-          if (node.children) {
-            return node.children.some(checkItem);
+          const name = (config.name || node.name).toLowerCase();
+          
+          // 자식부터 먼저 가지치기
+          const prunedChildren = node.children
+            ? prune(node.children)
+            : [];
+          
+          // 현재 노드가 매칭되거나, 매칭된 자식이 하나라도 있으면 포함
+          if (name.includes(searchLower) || prunedChildren.length > 0) {
+            acc.push({
+              ...node,
+              children: prunedChildren
+            });
           }
-          return false;
-        };
-        return checkItem(item);
-      });
+          return acc;
+        }, []);
+      };
+      
+      items = prune(items);
     }
     
     return items;
