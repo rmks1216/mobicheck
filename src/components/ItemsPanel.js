@@ -160,8 +160,6 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
       node={node}
       onSelect={handleSelect}
       level={0}
-      isInChecklist={currentChecklistItems.has(node.id)}
-      usageCount={usageStats.get(node.id) || 0}
       isExpanded={expandedItems.has(node.id)}
       onToggleExpand={handleToggleExpand}
       selectedItems={selectedItems}
@@ -169,8 +167,14 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
       isMultiSelect={isMultiSelect}
       onContextMenu={handleContextMenu}
       onToggleFavorite={handleToggleFavorite}
+      // expandedItems 전체를 전달하여 하위 컴포넌트에서 참조 가능하게 함
+      expandedItems={expandedItems}
+      // 개별 상태 계산을 위한 추가 props
+      currentChecklistItems={currentChecklistItems}
+      usageStats={usageStats}
     />
   );
+  
   
   // 그리드 뷰 렌더링
   const renderGridView = () => (
@@ -353,21 +357,30 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
         ) : (
           <>
             {viewMode === 'tree' && (
-              isVirtualized && filteredItems.length > 100 ? (
-                <Suspense fallback={<div className="h-full bg-gray-100 animate-pulse" />}>
-                  <VirtualizedList
-                    items={filteredItems}
-                    renderItem={renderTreeItem}
-                    containerHeight={400}
-                  />
-                </Suspense>
-              ) : (
-                <div className="overflow-y-auto custom-scrollbar p-4">
-                  <ul>
-                    {filteredItems.map((node) => renderTreeItem(node, 0))}
-                  </ul>
-                </div>
-              )
+              <div className="overflow-y-auto custom-scrollbar p-4">
+                <ul>
+                  {filteredItems.map((node) => (
+                    <TreeItem
+                      key={node.id}
+                      node={node}
+                      onSelect={handleSelect}
+                      level={0}
+                      isExpanded={expandedItems.has(node.id)}
+                      onToggleExpand={handleToggleExpand}
+                      selectedItems={selectedItems}
+                      onItemSelect={handleItemSelect}
+                      isMultiSelect={isMultiSelect}
+                      onContextMenu={handleContextMenu}
+                      onToggleFavorite={handleToggleFavorite}
+                      // expandedItems 전체를 전달
+                      expandedItems={expandedItems}
+                      // 개별 상태 계산을 위한 추가 props
+                      currentChecklistItems={currentChecklistItems}
+                      usageStats={usageStats}
+                    />
+                  ))}
+                </ul>
+              </div>
             )}
             
             {viewMode === 'grid' && (

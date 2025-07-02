@@ -77,13 +77,17 @@ export function useItemsLogic({ allItems, addItems, ancestorMap, descendantMap, 
   
   // 이벤트 핸들러들
   const handleToggleExpand = (itemId) => {
+    console.log('handleToggleExpand called for:', itemId); // 디버깅용
     setExpandedItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
         newSet.delete(itemId);
+        console.log('Collapsed:', itemId); // 디버깅용
       } else {
         newSet.add(itemId);
+        console.log('Expanded:', itemId); // 디버깅용
       }
+      console.log('New expanded items:', Array.from(newSet)); // 디버깅용
       return newSet;
     });
   };
@@ -155,9 +159,12 @@ export function useItemsLogic({ allItems, addItems, ancestorMap, descendantMap, 
     setContextMenu({ x, y, item });
   };
   
-  // 초기 확장 상태 설정
+  // 초기 확장 상태 설정 - 최상위 카테고리만 확장
   useEffect(() => {
-    setExpandedItems(new Set(categories.map(cat => cat.id)));
+    // 최상위 카테고리만 확장 (level 0)
+    const topLevelCategoryIds = categories.map(cat => cat.id);
+    console.log('최상위 카테고리 IDs:', topLevelCategoryIds); // 디버깅용
+    setExpandedItems(new Set(topLevelCategoryIds)); // duty만 확장
   }, [categories]);
   
   // 로컬 스토리지에서 데이터 로드
