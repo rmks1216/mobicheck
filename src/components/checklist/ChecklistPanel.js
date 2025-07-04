@@ -141,7 +141,8 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
     decrementCount,
     setTargetCount,
     setCurrentCount,
-    getProgressInfo
+    getProgressInfo,
+    findItemById // findItemById 추가
   } = useChecklistStore();
   
   const [settingsModal, setSettingsModal] = useState(null);
@@ -192,11 +193,16 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
     }
   };
   
+  const nonCategoryChecklistItems = active.items.filter(item => {
+    const fullItem = findItemById(item.id);
+    return fullItem && !(fullItem.children && fullItem.children.length > 0);
+  });
+
   return (
     <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col">
       {/* 헤더 */}
       <ChecklistHeader
-        checklist={active}
+        checklist={{ ...active, items: nonCategoryChecklistItems }}
         progressInfo={progressInfo}
         onRename={(name) => renameChecklist(active.id, name)}
         onModeChange={(mode) => setChecklistMode(active.id, mode)}

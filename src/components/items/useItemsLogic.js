@@ -32,7 +32,10 @@ export function useItemsLogic({ allItems, addItems, ancestorMap, descendantMap, 
     
     // (1) 카테고리 필터 기존 로직 유지
     if (filterCategory !== 'all') {
-      items = items.filter(/* ... */);
+      items = items.filter(item => {
+        const config = categoryConfig[item.id];
+        return config && config.category === filterCategory;
+      });
     }
     
     // (2) 검색어가 있을 때만 가지치기 수행

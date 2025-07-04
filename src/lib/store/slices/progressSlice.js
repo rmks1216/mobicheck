@@ -4,15 +4,26 @@ export const createProgressSlice = (set, get) => ({
     const checklist = get().checklists.find((c) => c.id === checklistId);
     if (!checklist || checklist.items.length === 0) return 0;
 
+    const allItems = get().allItems; // allItems 가져오기
+    const findItemById = get().findItemById; // findItemById 가져오기
+
+    // 카테고리 항목을 제외한 실제 아이템만 필터링
+    const nonCategoryItems = checklist.items.filter(item => {
+      const fullItem = get().findItemById(item.id);
+      return fullItem && !(fullItem.children && fullItem.children.length > 0);
+    });
+
+    if (nonCategoryItems.length === 0) return 0; // 실제 아이템이 없으면 0 반환
+
     if (checklist.mode === 'simple') {
-      const completed = checklist.items.filter((item) => item.checked).length;
-      return Math.round((completed / checklist.items.length) * 100);
+      const completed = nonCategoryItems.filter((item) => item.checked).length;
+      return Math.round((completed / nonCategoryItems.length) * 100);
     } else {
-      const totalTarget = checklist.items.reduce(
+      const totalTarget = nonCategoryItems.reduce(
         (sum, item) => sum + item.targetCount,
         0
       );
-      const totalCurrent = checklist.items.reduce(
+      const totalCurrent = nonCategoryItems.reduce(
         (sum, item) => sum + item.currentCount,
         0
       );
@@ -27,11 +38,20 @@ export const createProgressSlice = (set, get) => ({
     const checklist = get().checklists.find((c) => c.id === checklistId);
     if (!checklist) return null;
 
+    const allItems = get().allItems; // allItems 가져오기
+    const findItemById = get().findItemById; // findItemById 가져오기
+
+    // 카테고리 항목을 제외한 실제 아이템만 필터링
+    const nonCategoryItems = checklist.items.filter(item => {
+      const fullItem = get().findItemById(item.id);
+      return fullItem && !(fullItem.children && fullItem.children.length > 0);
+    });
+
     const progress = get().getProgress(checklistId);
-    const totalItems = checklist.items.length;
+    const totalItems = nonCategoryItems.length; // 필터링된 항목의 개수
 
     if (checklist.mode === 'simple') {
-      const completedItems = checklist.items.filter((item) => item.checked).length;
+      const completedItems = nonCategoryItems.filter((item) => item.checked).length;
       return {
         mode: 'simple',
         progress,
@@ -40,15 +60,15 @@ export const createProgressSlice = (set, get) => ({
         description: `${completedItems}/${totalItems} 항목 완료`,
       };
     } else {
-      const totalTarget = checklist.items.reduce(
+      const totalTarget = nonCategoryItems.reduce(
         (sum, item) => sum + item.targetCount,
         0
       );
-      const totalCurrent = checklist.items.reduce(
+      const totalCurrent = nonCategoryItems.reduce(
         (sum, item) => sum + item.currentCount,
         0
       );
-      const completedItems = checklist.items.filter((item) => item.checked).length;
+      const completedItems = nonCategoryItems.filter((item) => item.checked).length;
 
       return {
         mode: 'repeat',

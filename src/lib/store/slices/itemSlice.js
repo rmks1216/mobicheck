@@ -1,4 +1,7 @@
 export const createItemSlice = (set, get) => ({
+  allItems: [],
+  setAllItems: (items) => set({ allItems: items }),
+
   // 항목 추가
   addItems: (itemIds, ancestorMap) =>
     set((state) => {
@@ -250,4 +253,20 @@ export const createItemSlice = (set, get) => ({
         }),
       };
     }),
+
+  // 유틸리티 함수: ID로 항목 찾기
+  findItemById: (id) => {
+    const allItems = get().allItems; // Get allItems from store
+    const findInNodes = (nodes, targetId) => {
+      for (const node of nodes) {
+        if (node.id === targetId) return node;
+        if (node.children && Array.isArray(node.children)) {
+          const found = findInNodes(node.children, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findInNodes(allItems, id);
+  },
 });

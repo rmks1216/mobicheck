@@ -1,5 +1,7 @@
 'use client';
 
+import { useChecklistStore } from '@/lib/store/checklistStore';
+
 // 모드 선택 컴포넌트
 function ModeSelector({ mode, onModeChange }) {
   return (
@@ -40,12 +42,19 @@ export default function ChecklistHeader({
                                           onClearAll,
                                           onDeleteAll
                                         }) {
+  const { allItems, findItemById } = useChecklistStore();
+
   const handleModeChange = (newMode) => {
     if (confirm(`모드를 "${newMode === 'simple' ? '간단 체크' : '반복 관리'}"로 변경하시겠습니까?\n모든 항목의 진행상태가 초기화됩니다.`)) {
       onModeChange(newMode);
     }
   };
-  
+
+  const nonCategoryItemsCount = checklist.items.filter(item => {
+    const fullItem = findItemById(allItems, item.id);
+    return fullItem && !(fullItem.children && fullItem.children.length > 0);
+  }).length;
+
   return (
     <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
       <input
@@ -66,7 +75,7 @@ export default function ChecklistHeader({
       {/* 진행률 정보 */}
       <div className="mt-4">
         <div className="flex items-center gap-4 text-sm text-blue-700">
-          <span>총 {checklist.items.length}개 항목</span>
+          <span>총 {nonCategoryItemsCount}개 항목</span>
           {progressInfo && (
             <>
               <span>•</span>

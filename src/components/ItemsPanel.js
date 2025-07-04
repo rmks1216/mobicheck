@@ -1,17 +1,20 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useChecklistStore } from '@/lib/store/checklistStore';
-import { useResponsive } from '../../hooks/useResponsive';
-import { useItemsPanel } from './useItemsPanel';
-import ItemsPanelHeader from './panel_components/ItemsPanelHeader';
-import ItemsList from './panel_components/ItemsList';
-import ContextMenu from './ContextMenu';
-import MobileItemsPanel from './MobileItemsPanel';
-import { categoryConfig } from './constants';
+import { useResponsive } from '../hooks/useResponsive';
+import { useItemsPanel } from './items/useItemsPanel';
+import ItemsPanelHeader from './items/panel_components/ItemsPanelHeader';
+import ItemsList from './items/panel_components/ItemsList';
+import ContextMenu from './items/ContextMenu';
+import MobileItemsPanel from './items/MobileItemsPanel';
+import { categoryConfig } from './items/constants';
 
 export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
-  const { addItems, checklists, activeId } = useChecklistStore();
+  const { addItems, checklists, activeId, setAllItems } = useChecklistStore();
+  useEffect(() => {
+    setAllItems(allItems);
+  }, [allItems, setAllItems]);
   const { isMobile, isTablet } = useResponsive();
 
   const {
@@ -96,7 +99,7 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
 
       <div className="px-4 py-2 border-t bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
         <span>
-          {filteredItems.length}개 항목 {searchTerm && `(전체 ${allItems.length}개 중)`}
+          {filteredItems.filter(item => !(item.children && item.children.length > 0)).length}개 항목 {searchTerm && `(전체 ${allItems.filter(item => !(item.children && item.children.length > 0)).length}개 중)`}
         </span>
         <span>단축키: Ctrl+F (검색), Ctrl+1-3 (뷰 변경), Esc (취소)</span>
       </div>

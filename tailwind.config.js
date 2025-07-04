@@ -4,7 +4,18 @@ module.exports = {
     './src/**/*.{js,jsx,ts,tsx}', // src 디렉터리 안 JS/TS 파일 모두
   ],
   theme: {
-    extend: {},                  // 필요한 사용자 색상·폰트 확장 가능
+    extend: {
+      colors: {
+        primary: '#3b82f6', // Blue-500
+        secondary: '#6b7280', // Gray-500
+        accent: '#f59e0b', // Amber-500
+        background: '#f9fafb', // Gray-50
+        foreground: '#1f2937', // Gray-800
+      },
+      fontFamily: {
+        sans: ['Pretendard', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 };

@@ -2,6 +2,7 @@
 
 import CheckboxIndet from './CheckboxIndet';
 import { RepeatCounter } from './RepeatComponents';
+import { useChecklistStore } from '@/lib/store/checklistStore';
 
 // 체크박스 상태 계산 함수들
 function getDescendantState(itemId, descendantMap, itemsMap) {
@@ -14,12 +15,21 @@ function getDescendantState(itemId, descendantMap, itemsMap) {
 }
 
 function getCompletionStats(itemId, descendantMap, itemsMap) {
+  const { findItemById } = useChecklistStore.getState(); // 스토어에서 findItemById 가져오기
+
   const descendants = descendantMap[itemId] || [];
   const presentDescendants = descendants.filter((d) => itemsMap.has(d));
-  const completed = presentDescendants.filter((d) => itemsMap.get(d)?.checked).length;
+
+  // 카테고리 항목을 제외한 실제 아이템만 필터링
+  const nonCategoryDescendants = presentDescendants.filter(id => {
+    const fullItem = findItemById(id);
+    return fullItem && !(fullItem.children && fullItem.children.length > 0);
+  });
+
+  const completed = nonCategoryDescendants.filter((d) => itemsMap.get(d)?.checked).length;
   return {
     completed,
-    total: presentDescendants.length,
+    total: nonCategoryDescendants.length,
   };
 }
 

@@ -10,10 +10,12 @@
     "tailwind": "tailwindcss -i ./src/app/globals.css -o ./public/t.css --watch"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "js-cookie": "^3.0.5",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
     "uuid": "^11.1.0",
     "zustand": "^5.0.6"
   },

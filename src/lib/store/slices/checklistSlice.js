@@ -60,4 +60,12 @@ export const createChecklistSlice = (set, get) => ({
         activeId: newActiveId,
       };
     }),
+
+  // 특정 체크리스트의 모든 항목 삭제
+  clearChecklist: (checklistId) =>
+    set((state) => ({
+      checklists: state.checklists.map((c) =>
+        c.id === checklistId ? { ...c, items: [] } : c
+      ),
+    })),
 });
