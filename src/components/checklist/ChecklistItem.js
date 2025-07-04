@@ -80,6 +80,10 @@ export default function ChecklistItem({
                                         onSettings,
                                         customLevel = null // 커스텀 레벨 prop 추가
                                       }) {
+  const { findItemById } = useChecklistStore(); // findItemById 가져오기
+  const fullItem = findItemById(item.id); // 전체 아이템 정보 가져오기
+  const isCategory = fullItem && fullItem.children && fullItem.children.length > 0;
+
   const descendants = descendantMap[item.id] || [];
   const ancestors = ancestorMap[item.id] || [];
   const descendantState = getDescendantState(item.id, descendantMap, itemsMap);
@@ -120,7 +124,7 @@ export default function ChecklistItem({
         </div>
         
         {/* 반복 카운터 (반복 모드에서만) */}
-        {checklist.mode === 'repeat' && (
+        {checklist.mode === 'repeat' && !isCategory && (
           <RepeatCounter
             item={item}
             onIncrement={() => onIncrement(item.id)}
