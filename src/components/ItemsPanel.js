@@ -14,10 +14,12 @@ import MobileItemsPanel from './items/MobileItemsPanel';
 import { categoryConfig } from './items/constants';
 
 export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
-  const { addItems, checklists, activeId, setAllItems } = useChecklistStore();
+  const { addItems, checklists, activeId, setAllItems, updateRelationMaps } = useChecklistStore();
   useEffect(() => {
     setAllItems(allItems);
-  }, [allItems, setAllItems]);
+    // 관계 매핑도 업데이트
+    updateRelationMaps();
+  }, [allItems, setAllItems, updateRelationMaps]);
   const { isMobile, isTablet } = useResponsive();
   
   const [viewMode, setViewMode] = useState('tree');

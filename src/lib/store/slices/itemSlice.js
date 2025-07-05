@@ -1,6 +1,80 @@
 export const createItemSlice = (set, get) => ({
   allItems: [],
+  
+  // 모든 아이템 설정
   setAllItems: (items) => set({ allItems: items }),
+  
+  // 아이템 ID로 찾기 (재귀적으로 검색)
+  findItemById: (itemId) => {
+    const { allItems } = get();
+    
+    const findRecursive = (items, id) => {
+      for (const item of items) {
+        if (item.id === id) return item;
+        if (item.children && item.children.length > 0) {
+          const found = findRecursive(item.children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    return findRecursive(allItems, itemId);
+  },
+  
+  // ID-이름 매핑 생성
+  getIdNameMap: () => {
+    const { allItems } = get();
+    const map = {};
+    
+    const mapRecursive = (items) => {
+      for (const item of items) {
+        map[item.id] = item.name;
+        if (item.children && item.children.length > 0) {
+          mapRecursive(item.children);
+        }
+      }
+    };
+    
+    mapRecursive(allItems);
+    return map;
+  },
+  
+  // 조상-후손 관계 매핑 생성
+  descendantMap: {},
+  ancestorMap: {},
+  
+  // 조상-후손 매핑 업데이트
+  updateRelationMaps: () => {
+    const { allItems } = get();
+    const descendantMap = {};
+    const ancestorMap = {};
+    
+    const buildMaps = (items, ancestors = []) => {
+      items.forEach(item => {
+        // 현재 아이템의 조상들 설정
+        ancestorMap[item.id] = [...ancestors];
+        
+        // 조상들에게 현재 아이템을 후손으로 추가
+        ancestors.forEach(ancestorId => {
+          if (!descendantMap[ancestorId]) {
+            descendantMap[ancestorId] = [];
+          }
+          descendantMap[ancestorId].push(item.id);
+        });
+        
+        // 자식들 처리
+        if (item.children && item.children.length > 0) {
+          descendantMap[item.id] = [];
+          buildMaps(item.children, [...ancestors, item.id]);
+        }
+      });
+    };
+    
+    buildMaps(allItems);
+    
+    set({ descendantMap, ancestorMap });
+  },
   
   // 항목 추가 - 각 항목에 개별 모드 설정
   addItems: (itemIds, ancestorMap) =>

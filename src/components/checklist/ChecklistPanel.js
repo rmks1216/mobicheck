@@ -160,9 +160,9 @@ export default function ChecklistPanel() {
   const idNameMap = getIdNameMap();
   const progressInfo = getProgressInfo(activeId);
   
-  // 카테고리 항목을 제외한 체크리스트 항목들
+  // 카테고리 항목을 제외한 체크리스트 항목들 - findItemById 올바른 사용
   const nonCategoryChecklistItems = active.items.filter(item => {
-    const fullItem = findItemById(allItems, item.id);
+    const fullItem = findItemById(item.id); // allItems 매개변수 제거
     return fullItem && !(fullItem.children && fullItem.children.length > 0);
   });
   

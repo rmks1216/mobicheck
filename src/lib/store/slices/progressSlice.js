@@ -5,9 +5,12 @@ export const createProgressSlice = (set, get) => ({
     const checklist = state.checklists.find((c) => c.id === checklistId);
     if (!checklist || checklist.items.length === 0) return 0;
     
+    // findItemById 함수를 state에서 가져오기
+    const findItemById = state.findItemById;
+    
     // 카테고리 항목을 제외한 실제 아이템만 필터링
     const nonCategoryItems = checklist.items.filter(item => {
-      const fullItem = state.findItemById(item.id);
+      const fullItem = findItemById(item.id);
       return fullItem && !(fullItem.children && fullItem.children.length > 0);
     });
     
@@ -45,9 +48,12 @@ export const createProgressSlice = (set, get) => ({
     const checklist = state.checklists.find((c) => c.id === checklistId);
     if (!checklist) return null;
     
+    // findItemById 함수를 state에서 가져오기
+    const findItemById = state.findItemById;
+    
     // 카테고리 항목을 제외한 실제 아이템만 필터링
     const nonCategoryItems = checklist.items.filter(item => {
-      const fullItem = state.findItemById(item.id);
+      const fullItem = findItemById(item.id);
       return fullItem && !(fullItem.children && fullItem.children.length > 0);
     });
     
@@ -86,13 +92,13 @@ export const createProgressSlice = (set, get) => ({
     if (simpleItems.length > 0 && repeatItems.length > 0) {
       // 혼합 모드
       const simpleCompleted = simpleItems.filter(item => item.checked).length;
-      description = `전체: ${completedItems}/${totalItems} 완료 (간단: ${simpleCompleted}/${simpleItems.length}, 반복: ${repeatStats.completedRepeatItems}/${repeatItems.length})`;
+      description = `전체: ${completedItems.length}/${totalItems} 완료 (간단: ${simpleCompleted}/${simpleItems.length}, 반복: ${repeatStats.completedRepeatItems}/${repeatItems.length})`;
     } else if (simpleItems.length > 0) {
       // 간단체크만
-      description = `${completedItems}/${totalItems} 항목 완료`;
+      description = `${completedItems.length}/${totalItems} 항목 완료`;
     } else if (repeatItems.length > 0) {
       // 반복관리만
-      description = `${repeatStats.totalCurrent}/${repeatStats.totalTarget} 회 완료 (${completedItems}/${totalItems} 항목 달성)`;
+      description = `${repeatStats.totalCurrent}/${repeatStats.totalTarget} 회 완료 (${completedItems.length}/${totalItems} 항목 달성)`;
     }
     
     return {
@@ -100,7 +106,7 @@ export const createProgressSlice = (set, get) => ({
         simpleItems.length > 0 ? 'simple' : 'repeat',
       progress,
       totalItems,
-      completedItems,
+      completedItems: completedItems.length,
       simpleItems: simpleItems.length,
       repeatItems: repeatItems.length,
       ...repeatStats,
@@ -108,14 +114,17 @@ export const createProgressSlice = (set, get) => ({
     };
   },
   
-  // 모드별 통계 가져오기
+  // 모드별 통계 가져오기 (중복 방지를 위해 checklistSlice에서 이동)
   getModeStats: (checklistId) => {
     const state = get();
     const checklist = state.checklists.find((c) => c.id === checklistId);
     if (!checklist) return null;
     
+    // findItemById 함수를 state에서 가져오기
+    const findItemById = state.findItemById;
+    
     const nonCategoryItems = checklist.items.filter(item => {
-      const fullItem = state.findItemById(item.id);
+      const fullItem = findItemById(item.id);
       return fullItem && !(fullItem.children && fullItem.children.length > 0);
     });
     

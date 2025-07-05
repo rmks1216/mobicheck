@@ -14,7 +14,6 @@ export const createChecklistSlice = (set, get) => ({
       };
     }),
   
-  
   // 활성 체크리스트 설정
   setActive: (id) => set({ activeId: id }),
   
@@ -51,37 +50,5 @@ export const createChecklistSlice = (set, get) => ({
       ),
     })),
   
-  // 모드별 통계 가져오기 (혼합 모드 지원)
-  getModeStats: (checklistId) => {
-    const state = get();
-    const checklist = state.checklists.find((c) => c.id === checklistId);
-    if (!checklist) return null;
-    
-    const nonCategoryItems = checklist.items.filter(item => {
-      const fullItem = state.findItemById(item.id);
-      return fullItem && !(fullItem.children && fullItem.children.length > 0);
-    });
-    
-    const simpleItems = nonCategoryItems.filter(item => (item.itemMode || 'simple') === 'simple');
-    const repeatItems = nonCategoryItems.filter(item => item.itemMode === 'repeat');
-    
-    return {
-      total: nonCategoryItems.length,
-      simple: {
-        count: simpleItems.length,
-        completed: simpleItems.filter(item => item.checked).length,
-        progress: simpleItems.length > 0 ?
-          Math.round((simpleItems.filter(item => item.checked).length / simpleItems.length) * 100) : 0,
-      },
-      repeat: {
-        count: repeatItems.length,
-        completed: repeatItems.filter(item => item.checked).length,
-        totalTarget: repeatItems.reduce((sum, item) => sum + (item.targetCount || 1), 0),
-        totalCurrent: repeatItems.reduce((sum, item) => sum + (item.currentCount || 0), 0),
-        progress: repeatItems.length > 0 && repeatItems.reduce((sum, item) => sum + (item.targetCount || 1), 0) > 0 ?
-          Math.round((repeatItems.reduce((sum, item) => sum + (item.currentCount || 0), 0) /
-            repeatItems.reduce((sum, item) => sum + (item.targetCount || 1), 0)) * 100) : 0,
-      },
-    };
-  },
+  
 });
