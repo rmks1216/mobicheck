@@ -19,15 +19,11 @@ export default function SettingsDropdown({
         title="설정"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-          <path
-            fillRule="evenodd"
-            d="M11.49 3.17a.75.75 0 0 1 1.02.02l1.125 1.125a.75.75 0 0 1 0 1.06l-1.125 1.125a.75.75 0 0 1-1.06 0l-1.125-1.125a.75.75 0 0 1-.02-1.02l1.125-1.125Zm-4.44 0a.75.75 0 0 1 1.02.02l1.125 1.125a.75.75 0 0 1 0 1.06L8.07 6.43a.75.75 0 0 1-1.06 0L5.885 5.305a.75.75 0 0 1-.02-1.02l1.125-1.125ZM4.75 11a.75.75 0 0 1 .75-.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1-.75-.75Zm.75 4.75a.75.75 0 0 0-1.5 0v.5a.75.75 0 0 0 .75.75h.5a.75.75 0 0 0 .75-.75v-.5Zm2.5 0a.75.75 0 0 0-1.5 0v.5a.75.75 0 0 0 .75.75h.5a.75.75 0 0 0 .75-.75v-.5Zm5.5 0a.75.75 0 0 0-1.5 0v.5a.75.75 0 0 0 .75.75h.5a.75.75 0 0 0 .75-.75v-.5Zm2.5 0a.75.75 0 0 0-1.5 0v.5a.75.75 0 0 0 .75.75h.5a.75.75 0 0 0 .75-.75v-.5Z"
-            clipRule="evenodd"
-          />
+          <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.993 6.993 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
         </svg>
       </button>
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-slate-700 rounded-xl shadow-xl border border-slate-600 z-10">
+        <div className="absolute right-0 mt-2 w-64 bg-slate-700 rounded-xl shadow-xl border border-slate-600 z-50">
           <div className="p-5 space-y-5">
             <label className="flex items-center justify-between cursor-pointer">
               <span className="text-base font-medium text-slate-200">☑️ 다중 선택 모드</span>
