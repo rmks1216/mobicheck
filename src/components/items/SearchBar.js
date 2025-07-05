@@ -26,16 +26,9 @@ export default function SearchBar({ searchTerm, onSearchChange, filterCategory, 
       </div>
       
       <div className="flex gap-2 overflow-x-auto pb-2">
-        <button
-          onClick={() => onFilterChange('all')}
-          className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-            filterCategory === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          전체
-        </button>
         {categories.map(category => {
           const config = categoryConfig[category.id] || {};
+          const isAllCategory = category.id === 'all';
           return (
             <button
               key={category.id}
@@ -44,8 +37,8 @@ export default function SearchBar({ searchTerm, onSearchChange, filterCategory, 
                 filterCategory === category.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              <span>{config.emoji}</span>
-              {config.name || category.name}
+              {!isAllCategory && <span>{config.emoji}</span>}
+              {isAllCategory ? category.name : (config.name || category.name)}
             </button>
           );
         })}

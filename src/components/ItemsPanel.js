@@ -1,9 +1,12 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useChecklistStore } from '@/lib/store/checklistStore';
 import { useResponsive } from '../hooks/useResponsive';
-import { useItemsPanel } from './items/useItemsPanel';
+import { useItemsFilter } from './items/useItemsFilter';
+import { useItemSelection } from './items/useItemSelection';
+import { useItemExpansion } from './items/useItemExpansion';
+import { useItemInteraction } from './items/useItemInteraction';
 import ItemsPanelHeader from './items/panel_components/ItemsPanelHeader';
 import ItemsList from './items/panel_components/ItemsList';
 import ContextMenu from './items/ContextMenu';
@@ -17,35 +20,47 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
   }, [allItems, setAllItems]);
   const { isMobile, isTablet } = useResponsive();
 
+  const [viewMode, setViewMode] = useState('tree');
+  const [isVirtualized, setIsVirtualized] = useState(false);
+
   const {
-    viewMode,
-    setViewMode,
-    isVirtualized,
-    setIsVirtualized,
-    performanceMetrics,
     searchTerm,
     setSearchTerm,
     filterCategory,
     setFilterCategory,
-    expandedItems,
+    filteredItems,
+    categories,
+  } = useItemsFilter(allItems, ancestorMap);
+
+  const {
     selectedItems,
     isMultiSelect,
     setIsMultiSelect,
+    handleSelect: handleSelectItem,
+    handleItemSelect,
+    handleAddSelected,
+  } = useItemSelection(addItems, descendantMap, ancestorMap);
+
+  const { expandedItems, handleToggleExpand } = useItemExpansion(categories);
+
+  const {
     recentItems,
     favoriteItems,
     contextMenu,
     setContextMenu,
     usageStats,
-    filteredItems,
-    currentChecklistItems,
-    categories,
-    handleToggleExpand,
-    handleItemSelect,
     handleSelect,
-    handleAddSelected,
     handleToggleFavorite,
     handleContextMenu,
-  } = useItemsPanel(allItems, addItems, ancestorMap, descendantMap, checklists, activeId);
+  } = useItemInteraction(allItems, addItems, ancestorMap, descendantMap);
+
+  const currentChecklistItems = new Set(
+    checklists.find(c => c.id === activeId)?.items.map(item => item.id) || []
+  );
+
+  useEffect(() => {
+    setIsVirtualized(filteredItems.length > 100);
+  }, [filteredItems.length]);
 
   if (isMobile || isTablet) {
     return (
@@ -66,7 +81,6 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
         setIsMultiSelect={setIsMultiSelect}
         selectedItems={selectedItems}
         handleAddSelected={handleAddSelected}
-        performanceMetrics={performanceMetrics}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         filterCategory={filterCategory}
