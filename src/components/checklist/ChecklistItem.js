@@ -1,28 +1,29 @@
 'use client';
 
+import { useChecklistStore } from '@/lib/store/checklistStore';
 import CheckboxIndet from './CheckboxIndet';
 import { RepeatCounter } from './RepeatComponents';
-import { useChecklistStore } from '@/lib/store/checklistStore';
 
-// 체크박스 상태 계산 함수들
-function getDescendantState(itemId, descendantMap, itemsMap) {
-  const descendants = descendantMap[itemId] || [];
-  const checkedDesc = descendants.filter((d) => itemsMap.get(d)?.checked);
+// 하위 항목들의 상태를 확인하는 함수
+function getDescendantState(id, descendantMap, itemsMap) {
+  const descendants = descendantMap[id] || [];
+  const descendantItems = descendants.map(d => itemsMap.get(d)).filter(Boolean);
+  const checked = descendantItems.filter(item => item.checked);
+  
   return {
-    all: descendants.length > 0 && checkedDesc.length === descendants.length,
-    some: checkedDesc.length > 0 && checkedDesc.length < descendants.length,
+    all: descendantItems.length > 0 && checked.length === descendantItems.length,
+    some: checked.length > 0 && checked.length < descendantItems.length,
+    none: checked.length === 0
   };
 }
 
-function getCompletionStats(itemId, descendantMap, itemsMap) {
+// 완료 통계를 계산하는 함수
+function getCompletionStats(id, descendantMap, itemsMap) {
   const { findItemById } = useChecklistStore.getState();
+  const descendants = descendantMap[id] || [];
   
-  const descendants = descendantMap[itemId] || [];
-  const presentDescendants = descendants.filter((d) => itemsMap.has(d));
-  
-  // 카테고리 항목을 제외한 실제 아이템만 필터링
-  const nonCategoryDescendants = presentDescendants.filter(id => {
-    const fullItem = findItemById(id);
+  const nonCategoryDescendants = descendants.filter((d) => {
+    const fullItem = findItemById(d);
     return fullItem && !(fullItem.children && fullItem.children.length > 0);
   });
   
@@ -35,6 +36,36 @@ function getCompletionStats(itemId, descendantMap, itemsMap) {
 
 function getItemLevel(id, ancestorMap) {
   return ancestorMap[id]?.length || 0;
+}
+
+// 개별 항목 모드 변경 컴포넌트
+function ItemModeSelector({ item, onModeChange }) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onModeChange(item.id, 'simple')}
+        className={`px-2 py-1 text-xs rounded transition-colors ${
+          item.itemMode === 'simple'
+            ? 'bg-blue-600 text-white shadow-sm'
+            : 'bg-slate-600/50 text-slate-400 hover:bg-slate-600 hover:text-slate-300'
+        }`}
+        title="간단체크 모드로 변경"
+      >
+        📝
+      </button>
+      <button
+        onClick={() => onModeChange(item.id, 'repeat')}
+        className={`px-2 py-1 text-xs rounded transition-colors ${
+          item.itemMode === 'repeat'
+            ? 'bg-purple-600 text-white shadow-sm'
+            : 'bg-slate-600/50 text-slate-400 hover:bg-slate-600 hover:text-slate-300'
+        }`}
+        title="반복관리 모드로 변경"
+      >
+        🔄
+      </button>
+    </div>
+  );
 }
 
 // 카테고리별 이모지 매핑
@@ -78,6 +109,7 @@ export default function ChecklistItem({
                                         onIncrement,
                                         onDecrement,
                                         onSettings,
+                                        onModeChange,
                                         customLevel = null
                                       }) {
   const { findItemById } = useChecklistStore();
@@ -92,6 +124,9 @@ export default function ChecklistItem({
   
   // customLevel이 제공되면 사용하고, 그렇지 않으면 기존 방식 사용
   const level = customLevel !== null ? customLevel : getItemLevel(item.id, ancestorMap);
+  
+  // 항목의 현재 모드 (기본값: 'simple')
+  const currentMode = item.itemMode || 'simple';
   
   return (
     <div
@@ -117,6 +152,17 @@ export default function ChecklistItem({
               {idNameMap[item.id] || item.id}
             </span>
             
+            {/* 모드 표시 배지 */}
+            {!isCategory && (
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                currentMode === 'repeat'
+                  ? 'bg-purple-900/30 text-purple-400 border border-purple-800/50'
+                  : 'bg-blue-900/30 text-blue-400 border border-blue-800/50'
+              }`}>
+                {currentMode === 'repeat' ? '🔄 반복' : '📝 간단'}
+              </span>
+            )}
+            
             {/* 하위 항목 통계 */}
             {hasChildren && (
               <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded-full border border-slate-600">
@@ -126,14 +172,24 @@ export default function ChecklistItem({
           </div>
         </div>
         
-        {/* 반복 카운터 (반복 모드에서만) */}
-        {checklist.mode === 'repeat' && !isCategory && (
+        {/* 반복 카운터 (반복 모드 항목에서만) */}
+        {currentMode === 'repeat' && !isCategory && (
           <RepeatCounter
             item={item}
             onIncrement={() => onIncrement(item.id)}
             onDecrement={() => onDecrement(item.id)}
             onSettings={() => onSettings(item)}
           />
+        )}
+        
+        {/* 모드 변경 버튼들 (카테고리가 아닌 경우에만) */}
+        {!isCategory && onModeChange && (
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+            <ItemModeSelector
+              item={item}
+              onModeChange={onModeChange}
+            />
+          </div>
         )}
         
         {/* 개별 삭제 버튼 */}

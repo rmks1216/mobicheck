@@ -62,7 +62,7 @@ function buildChecklistTree(allItems, checklistItems, idNameMap) {
   return allItems.map(filterTreeNode).filter(Boolean);
 }
 
-// 체크리스트 트리 항목 렌더링 컴포넌트 (다크모드)
+// 체크리스트 트리 항목 렌더링 컴포넌트 (혼합 모드 지원)
 function ChecklistTreeItem({
                              node,
                              checklist,
@@ -75,6 +75,7 @@ function ChecklistTreeItem({
                              onIncrement,
                              onDecrement,
                              onSettings,
+                             onModeChange,
                              level = 0
                            }) {
   const emoji = categoryEmojis[node.id] || '📋';
@@ -97,13 +98,14 @@ function ChecklistTreeItem({
           onIncrement={onIncrement}
           onDecrement={onDecrement}
           onSettings={onSettings}
+          onModeChange={onModeChange}
           customLevel={level}
         />
       )}
       
       {/* 하위 항목들 렌더링 */}
       {node.children && node.children.length > 0 && (
-        <div className={level > 0 ? "ml-6" : ""}>
+        <div className={level > 0 ? "ml-4" : ""}>
           {node.children.map(child => (
             <ChecklistTreeItem
               key={child.id}
@@ -118,6 +120,7 @@ function ChecklistTreeItem({
               onIncrement={onIncrement}
               onDecrement={onDecrement}
               onSettings={onSettings}
+              onModeChange={onModeChange}
               level={level + 1}
             />
           ))}
@@ -127,47 +130,48 @@ function ChecklistTreeItem({
   );
 }
 
-export default function ChecklistPanel({ allItems, idNameMap, descendantMap, ancestorMap }) {
+export default function ChecklistPanel() {
   const {
     checklists,
     activeId,
-    toggleCascade,
+    allItems,
     renameChecklist,
-    setChecklistMode,
-    clearChecklist,
-    uncheckAllItems,
     removeItem,
+    uncheckAllItems,
+    clearChecklist,
+    toggleCascade,
     incrementCount,
     decrementCount,
+    getProgressInfo,
     setTargetCount,
     setCurrentCount,
-    getProgressInfo,
-    findItemById
+    setItemMode,
+    descendantMap,
+    ancestorMap,
+    findItemById,
+    getIdNameMap
   } = useChecklistStore();
   
   const [settingsModal, setSettingsModal] = useState(null);
   
-  const active = checklists.find((c) => c.id === activeId);
+  const active = checklists.find(c => c.id === activeId);
+  if (!active) return null;
   
-  if (!active) {
-    return (
-      <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-700 h-full flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center py-12 text-slate-400">
-            <div className="text-4xl mb-4">📝</div>
-            <p className="text-lg font-medium mb-2 text-slate-300">체크리스트를 먼저 추가하세요</p>
-            <p className="text-sm">우측 상단의 "+ 새 리스트" 버튼을 클릭해보세요</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const idNameMap = getIdNameMap();
+  const progressInfo = getProgressInfo(activeId);
   
-  const itemsMap = new Map(active.items.map((i) => [i.id, i]));
-  const progressInfo = getProgressInfo(active.id);
+  // 카테고리 항목을 제외한 체크리스트 항목들
+  const nonCategoryChecklistItems = active.items.filter(item => {
+    const fullItem = findItemById(allItems, item.id);
+    return fullItem && !(fullItem.children && fullItem.children.length > 0);
+  });
   
-  // 원본 트리 구조를 기반으로 체크리스트 트리 구성
+  const itemsMap = new Map(active.items.map(item => [item.id, item]));
   const checklistTree = buildChecklistTree(allItems, active.items, idNameMap);
+  
+  const handleRemoveItem = (itemId) => {
+    removeItem(itemId, descendantMap);
+  };
   
   const handleSaveSettings = (targetCount, currentCount) => {
     if (settingsModal) {
@@ -177,26 +181,11 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
     }
   };
   
-  const handleRemoveItem = (itemId) => {
-    const descendants = descendantMap[itemId] || [];
-    const hasChildren = descendants.some(d => itemsMap.has(d));
-    
-    let confirmMessage = `"${idNameMap[itemId] || itemId}"을(를) 체크리스트에서 제거하시겠습니까?`;
-    
-    if (hasChildren) {
-      const presentDescendants = descendants.filter(d => itemsMap.has(d));
-      confirmMessage += `\n\n이 항목의 하위 항목 ${presentDescendants.length}개도 함께 삭제됩니다.`;
-    }
-    
-    if (confirm(confirmMessage)) {
-      removeItem(itemId, descendantMap);
+  const handleModeChange = (itemId, newMode) => {
+    if (confirm(`항목을 "${newMode === 'simple' ? '간단 체크' : '반복 관리'}" 모드로 변경하시겠습니까?\n진행상태가 초기화됩니다.`)) {
+      setItemMode(itemId, newMode);
     }
   };
-  
-  const nonCategoryChecklistItems = active.items.filter(item => {
-    const fullItem = findItemById(item.id);
-    return fullItem && !(fullItem.children && fullItem.children.length > 0);
-  });
   
   return (
     <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-700 h-full flex flex-col">
@@ -205,7 +194,6 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
         checklist={{ ...active, items: nonCategoryChecklistItems }}
         progressInfo={progressInfo}
         onRename={(name) => renameChecklist(active.id, name)}
-        onModeChange={(mode) => setChecklistMode(active.id, mode)}
         onClearAll={() => uncheckAllItems(active.id)}
         onDeleteAll={() => clearChecklist(active.id)}
       />
@@ -234,14 +222,15 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
                 onIncrement={incrementCount}
                 onDecrement={decrementCount}
                 onSettings={setSettingsModal}
+                onModeChange={handleModeChange}
               />
             ))}
           </div>
         )}
       </div>
       
-      {/* 반복 설정 모달 */}
-      {settingsModal && active.mode === 'repeat' && (
+      {/* 반복 설정 모달 (반복 모드 항목에서만) */}
+      {settingsModal && settingsModal.itemMode === 'repeat' && (
         <RepeatSettingsModal
           item={settingsModal}
           idNameMap={idNameMap}
