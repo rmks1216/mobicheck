@@ -18,7 +18,7 @@ export default function CheckboxIndet({checked, indeterminate, ...props}) {
       type="checkbox"
       ref={ref}
       checked={checked}
-      className="custom-checkbox"
+      className="custom-checkbox dark-mode"
       {...props}
     />
   );

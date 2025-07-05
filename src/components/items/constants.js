@@ -26,15 +26,16 @@ export const categoryConfig = {
   'colen04': { emoji: '🪵', icon: '✨', color: 'orange', name: '상급 통나무+ 20' }
 };
 
+// 다크모드 색상 테마
 export const colorThemes = {
-  blue: 'hover:bg-blue-50 hover:border-blue-200 text-blue-700 border-blue-100',
-  purple: 'hover:bg-purple-50 hover:border-purple-200 text-purple-700 border-purple-100',
-  indigo: 'hover:bg-indigo-50 hover:border-indigo-200 text-indigo-700 border-indigo-100',
-  green: 'hover:bg-green-50 hover:border-green-200 text-green-700 border-green-100',
-  pink: 'hover:bg-pink-50 hover:border-pink-200 text-pink-700 border-pink-100',
-  orange: 'hover:bg-orange-50 hover:border-orange-200 text-orange-700 border-orange-100',
-  gray: 'hover:bg-gray-50 hover:border-gray-200 text-gray-700 border-gray-100',
-  yellow: 'hover:bg-yellow-50 hover:border-yellow-200 text-yellow-700 border-yellow-100',
-  red: 'hover:bg-red-50 hover:border-red-200 text-red-700 border-red-100',
-  cyan: 'hover:bg-cyan-50 hover:border-cyan-200 text-cyan-700 border-cyan-100'
+  blue: 'hover:bg-blue-900/20 hover:border-blue-600 text-blue-400 border-blue-800/50',
+  purple: 'hover:bg-purple-900/20 hover:border-purple-600 text-purple-400 border-purple-800/50',
+  indigo: 'hover:bg-indigo-900/20 hover:border-indigo-600 text-indigo-400 border-indigo-800/50',
+  green: 'hover:bg-green-900/20 hover:border-green-600 text-green-400 border-green-800/50',
+  pink: 'hover:bg-pink-900/20 hover:border-pink-600 text-pink-400 border-pink-800/50',
+  orange: 'hover:bg-orange-900/20 hover:border-orange-600 text-orange-400 border-orange-800/50',
+  gray: 'hover:bg-gray-700/50 hover:border-gray-500 text-gray-300 border-gray-600/50',
+  yellow: 'hover:bg-yellow-900/20 hover:border-yellow-600 text-yellow-400 border-yellow-800/50',
+  red: 'hover:bg-red-900/20 hover:border-red-600 text-red-400 border-red-800/50',
+  cyan: 'hover:bg-cyan-900/20 hover:border-cyan-600 text-cyan-400 border-cyan-800/50'
 };

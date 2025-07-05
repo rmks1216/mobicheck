@@ -1,36 +1,28 @@
 'use client';
+
 import { useState } from 'react';
 
-// 반복 항목 설정 모달 컴포넌트
-export function RepeatSettingsModal({ item, idNameMap, onClose, onSave }) {
-  const [targetCount, setTargetCount] = useState(item.targetCount || 1);
-  const [currentCount, setCurrentCount] = useState(item.currentCount || 0);
+// 반복 설정 다이얼로그 (다크모드)
+export function RepeatSettingsDialog({ item, idNameMap, onSave, onClose }) {
+  const [targetCount, setTargetCount] = useState(item.targetCount?.toString() || '1');
+  const [currentCount, setCurrentCount] = useState(item.currentCount?.toString() || '0');
   
   const handleTargetChange = (e) => {
     const value = e.target.value;
-    if (value === '') {
-      setTargetCount('');
-      return;
-    }
-    const numValue = parseInt(value);
-    if (!isNaN(numValue) && numValue >= 1) {
-      setTargetCount(numValue);
-      // 현재 카운트가 새로운 목표값보다 크면 조정
-      if (currentCount > numValue) {
-        setCurrentCount(numValue);
+    if (value === '' || (parseInt(value) >= 1 && parseInt(value) <= 999)) {
+      setTargetCount(value);
+      // 목표가 변경되면 현재값이 목표를 초과하지 않도록 조정
+      if (value !== '' && parseInt(currentCount) > parseInt(value)) {
+        setCurrentCount(value);
       }
     }
   };
   
   const handleCurrentChange = (e) => {
     const value = e.target.value;
-    if (value === '') {
-      setCurrentCount('');
-      return;
-    }
-    const numValue = parseInt(value);
-    if (!isNaN(numValue) && numValue >= 0) {
-      setCurrentCount(Math.min(numValue, targetCount || 1));
+    const maxValue = targetCount === '' ? 999 : parseInt(targetCount);
+    if (value === '' || (parseInt(value) >= 0 && parseInt(value) <= maxValue)) {
+      setCurrentCount(value);
     }
   };
   
@@ -41,36 +33,36 @@ export function RepeatSettingsModal({ item, idNameMap, onClose, onSave }) {
   };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]">
-        <h3 className="text-lg font-semibold mb-4">반복 설정</h3>
-        <p className="text-sm text-gray-600 mb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+      <div className="bg-slate-800 rounded-lg p-6 w-96 max-w-[90vw] border border-slate-700 shadow-2xl">
+        <h3 className="text-lg font-semibold mb-4 text-slate-100">반복 설정</h3>
+        <p className="text-sm text-slate-400 mb-4">
           {idNameMap[item.id] || item.id}
         </p>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">목표 횟수</label>
+            <label className="block text-sm font-medium mb-2 text-slate-300">목표 횟수</label>
             <input
               type="number"
               min="1"
               max="999"
               value={targetCount}
               onChange={handleTargetChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="1"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">현재 진행</label>
+            <label className="block text-sm font-medium mb-2 text-slate-300">현재 진행</label>
             <input
               type="number"
               min="0"
               max={targetCount || 999}
               value={currentCount}
               onChange={handleCurrentChange}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="0"
             />
           </div>
@@ -79,13 +71,13 @@ export function RepeatSettingsModal({ item, idNameMap, onClose, onSave }) {
         <div className="flex gap-3 mt-6">
           <button
             onClick={handleSave}
-            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             저장
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+            className="flex-1 bg-slate-600 text-slate-300 py-2 rounded-lg hover:bg-slate-500 transition-colors font-medium"
           >
             취소
           </button>
@@ -95,7 +87,10 @@ export function RepeatSettingsModal({ item, idNameMap, onClose, onSave }) {
   );
 }
 
-// 반복 카운터 컴포넌트 (반복 모드에서만 표시)
+// 호환성을 위한 별칭 export
+export const RepeatSettingsModal = RepeatSettingsDialog;
+
+// 반복 카운터 컴포넌트 (반복 모드에서만 표시) - 다크모드
 export function RepeatCounter({ item, onIncrement, onDecrement, onSettings }) {
   const safeItem = {
     checked: item.checked || false,
@@ -110,17 +105,17 @@ export function RepeatCounter({ item, onIncrement, onDecrement, onSettings }) {
     <div className="flex items-center gap-2">
       {/* 진행 상황 표시 */}
       <div className="flex items-center gap-1">
-        <span className={`text-xs font-medium ${isCompleted ? 'text-green-600' : 'text-purple-600'}`}>
+        <span className={`text-xs font-medium ${isCompleted ? 'text-green-400' : 'text-purple-400'}`}>
           {safeItem.currentCount}/{safeItem.targetCount}
         </span>
         
-        {/* 진행률 바 (작은 버전) */}
-        <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        {/* 진행률 바 (작은 버전) - 다크모드 */}
+        <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ${
               isCompleted ? 'bg-green-500' : 'bg-purple-500'
             }`}
-            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+            style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>
       </div>
@@ -130,25 +125,21 @@ export function RepeatCounter({ item, onIncrement, onDecrement, onSettings }) {
         <button
           onClick={onDecrement}
           disabled={safeItem.currentCount <= 0}
-          className="w-6 h-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition-colors"
-          title="횟수 감소"
+          className="w-6 h-6 rounded-md bg-slate-700 text-slate-300 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs font-bold transition-colors"
         >
-          -
+          −
         </button>
-        
         <button
           onClick={onIncrement}
           disabled={safeItem.currentCount >= safeItem.targetCount}
-          className="w-6 h-6 rounded-full bg-green-100 text-green-600 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold transition-colors"
-          title="횟수 증가"
+          className="w-6 h-6 rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs font-bold transition-colors"
         >
           +
         </button>
-        
         <button
           onClick={onSettings}
-          className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs font-bold transition-colors"
-          title="반복 설정"
+          className="w-6 h-6 rounded-md bg-slate-600 text-slate-300 hover:bg-slate-500 flex items-center justify-center text-xs transition-colors"
+          title="설정"
         >
           ⚙️
         </button>

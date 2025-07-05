@@ -62,7 +62,7 @@ function buildChecklistTree(allItems, checklistItems, idNameMap) {
   return allItems.map(filterTreeNode).filter(Boolean);
 }
 
-// 체크리스트 트리 항목 렌더링 컴포넌트
+// 체크리스트 트리 항목 렌더링 컴포넌트 (다크모드)
 function ChecklistTreeItem({
                              node,
                              checklist,
@@ -142,7 +142,7 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
     setTargetCount,
     setCurrentCount,
     getProgressInfo,
-    findItemById // findItemById 추가
+    findItemById
   } = useChecklistStore();
   
   const [settingsModal, setSettingsModal] = useState(null);
@@ -151,11 +151,11 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
   
   if (!active) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col">
+      <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-700 h-full flex flex-col">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-slate-400">
             <div className="text-4xl mb-4">📝</div>
-            <p className="text-lg font-medium mb-2">체크리스트를 먼저 추가하세요</p>
+            <p className="text-lg font-medium mb-2 text-slate-300">체크리스트를 먼저 추가하세요</p>
             <p className="text-sm">우측 상단의 "+ 새 리스트" 버튼을 클릭해보세요</p>
           </div>
         </div>
@@ -197,9 +197,9 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
     const fullItem = findItemById(item.id);
     return fullItem && !(fullItem.children && fullItem.children.length > 0);
   });
-
+  
   return (
-    <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col">
+    <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-700 h-full flex flex-col">
       {/* 헤더 */}
       <ChecklistHeader
         checklist={{ ...active, items: nonCategoryChecklistItems }}
@@ -213,9 +213,9 @@ export default function ChecklistPanel({ allItems, idNameMap, descendantMap, anc
       {/* 체크리스트 항목들 */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {active.items.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-slate-400">
             <div className="text-6xl mb-4">📋</div>
-            <p className="text-lg font-medium mb-2">항목을 추가해보세요</p>
+            <p className="text-lg font-medium mb-2 text-slate-300">항목을 추가해보세요</p>
             <p className="text-sm">좌측에서 원하는 항목을 클릭하여 추가할 수 있습니다</p>
           </div>
         ) : (

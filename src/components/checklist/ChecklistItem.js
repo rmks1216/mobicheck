@@ -15,17 +15,17 @@ function getDescendantState(itemId, descendantMap, itemsMap) {
 }
 
 function getCompletionStats(itemId, descendantMap, itemsMap) {
-  const { findItemById } = useChecklistStore.getState(); // 스토어에서 findItemById 가져오기
-
+  const { findItemById } = useChecklistStore.getState();
+  
   const descendants = descendantMap[itemId] || [];
   const presentDescendants = descendants.filter((d) => itemsMap.has(d));
-
+  
   // 카테고리 항목을 제외한 실제 아이템만 필터링
   const nonCategoryDescendants = presentDescendants.filter(id => {
     const fullItem = findItemById(id);
     return fullItem && !(fullItem.children && fullItem.children.length > 0);
   });
-
+  
   const completed = nonCategoryDescendants.filter((d) => itemsMap.get(d)?.checked).length;
   return {
     completed,
@@ -78,12 +78,12 @@ export default function ChecklistItem({
                                         onIncrement,
                                         onDecrement,
                                         onSettings,
-                                        customLevel = null // 커스텀 레벨 prop 추가
+                                        customLevel = null
                                       }) {
-  const { findItemById } = useChecklistStore(); // findItemById 가져오기
-  const fullItem = findItemById(item.id); // 전체 아이템 정보 가져오기
+  const { findItemById } = useChecklistStore();
+  const fullItem = findItemById(item.id);
   const isCategory = fullItem && fullItem.children && fullItem.children.length > 0;
-
+  
   const descendants = descendantMap[item.id] || [];
   const ancestors = ancestorMap[item.id] || [];
   const descendantState = getDescendantState(item.id, descendantMap, itemsMap);
@@ -95,7 +95,7 @@ export default function ChecklistItem({
   
   return (
     <div
-      className="group hover:bg-gray-50 rounded-lg transition-colors"
+      className="group hover:bg-slate-700/30 rounded-lg transition-colors"
       style={{ paddingLeft: `${level * 20}px` }}
     >
       <div className="flex items-center gap-3 p-3">
@@ -110,13 +110,16 @@ export default function ChecklistItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-lg">{itemEmojis[item.id] || '📋'}</span>
-            <span className={`font-medium ${item.checked ? 'text-gray-500 line-through' : 'text-gray-700'}`}>
+            <span className={`font-medium ${item.checked
+              ? 'text-slate-500 line-through'
+              : 'text-slate-200'
+            }`}>
               {idNameMap[item.id] || item.id}
             </span>
             
             {/* 하위 항목 통계 */}
             {hasChildren && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded-full border border-slate-600">
                 {stats.completed}/{stats.total}
               </span>
             )}
@@ -135,10 +138,9 @@ export default function ChecklistItem({
         
         {/* 개별 삭제 버튼 */}
         <button
-          className="w-4 h-4 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-all text-xs font-bold opacity-0 group-hover:opacity-100"
+          className="w-4 h-4 rounded-full bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-all text-xs font-bold opacity-0 group-hover:opacity-100 border border-red-800/50"
           onClick={(e) => {
             e.stopPropagation();
-            // onRemove에서 이미 confirm 처리를 하므로 여기서는 바로 호출
             onRemove(item.id);
           }}
           title="항목 삭제"

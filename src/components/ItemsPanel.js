@@ -19,10 +19,10 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
     setAllItems(allItems);
   }, [allItems, setAllItems]);
   const { isMobile, isTablet } = useResponsive();
-
+  
   const [viewMode, setViewMode] = useState('tree');
   const [isVirtualized, setIsVirtualized] = useState(false);
-
+  
   const {
     searchTerm,
     setSearchTerm,
@@ -31,7 +31,7 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
     filteredItems,
     categories,
   } = useItemsFilter(allItems, ancestorMap);
-
+  
   const {
     selectedItems,
     isMultiSelect,
@@ -40,9 +40,9 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
     handleItemSelect,
     handleAddSelected,
   } = useItemSelection(addItems, descendantMap, ancestorMap);
-
+  
   const { expandedItems, handleToggleExpand } = useItemExpansion(categories);
-
+  
   const {
     recentItems,
     favoriteItems,
@@ -53,25 +53,25 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
     handleToggleFavorite,
     handleContextMenu,
   } = useItemInteraction(allItems, addItems, ancestorMap, descendantMap);
-
+  
   const currentChecklistItems = new Set(
     checklists.find(c => c.id === activeId)?.items.map(item => item.id) || []
   );
-
+  
   useEffect(() => {
     setIsVirtualized(filteredItems.length > 100);
   }, [filteredItems.length]);
-
+  
   if (isMobile || isTablet) {
     return (
-      <Suspense fallback={<div className="h-full bg-gray-100 animate-pulse rounded-xl" />}>
+      <Suspense fallback={<div className="h-full bg-slate-800 animate-pulse rounded-xl" />}>
         <MobileItemsPanel allItems={allItems} descendantMap={descendantMap} ancestorMap={ancestorMap} />
       </Suspense>
     );
   }
-
+  
   return (
-    <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col">
+    <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-700 h-full flex flex-col">
       <ItemsPanelHeader
         viewMode={viewMode}
         setViewMode={setViewMode}
@@ -92,7 +92,7 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
         handleToggleFavorite={handleToggleFavorite}
         filteredItemsCount={filteredItems.length}
       />
-
+      
       <ItemsList
         viewMode={viewMode}
         filteredItems={filteredItems}
@@ -110,14 +110,14 @@ export default function ItemsPanel({ allItems, descendantMap, ancestorMap }) {
         usageStats={usageStats}
         categoryConfig={categoryConfig}
       />
-
-      <div className="px-4 py-2 border-t bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
+      
+      <div className="px-4 py-2 border-t border-slate-700 bg-slate-800/50 text-xs text-slate-400 flex justify-between items-center">
         <span>
           {filteredItems.filter(item => !(item.children && item.children.length > 0)).length}개 항목 {searchTerm && `(전체 ${allItems.filter(item => !(item.children && item.children.length > 0)).length}개 중)`}
         </span>
         <span>단축키: Ctrl+F (검색), Ctrl+1-3 (뷰 변경), Esc (취소)</span>
       </div>
-
+      
       {contextMenu && (
         <Suspense>
           <ContextMenu

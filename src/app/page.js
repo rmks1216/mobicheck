@@ -16,12 +16,12 @@ export default async function HomePage() {
   const {idNameMap, descendantMap, ancestorMap} = buildMaps(allItems);
   
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* 헤더 */}
-      <header className="bg-white shadow-sm border-b">
+    <div className="bg-slate-900 min-h-screen">
+      {/* 헤더 - 다크모드 */}
+      <header className="bg-slate-950 shadow-lg border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">📋 마비노기 모바일 체크리스트 (MobiCheck) Alpha v1.0.0</h1>
-          <p className="text-gray-600 text-sm mt-1">항목을 클릭하여 체크리스트에 추가하고 관리하세요</p>
+          <h1 className="text-2xl font-bold text-slate-100">📋 마비노기 모바일 체크리스트 (MobiCheck) Alpha v1.0.0</h1>
+          <p className="text-slate-400 text-sm mt-1">항목을 클릭하여 체크리스트에 추가하고 관리하세요</p>
         </div>
       </header>
       
@@ -36,7 +36,7 @@ export default async function HomePage() {
           
           {/* 우측: 체크리스트 패널 */}
           <section className="flex flex-col">
-            <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col">
+            <div className="bg-slate-800 rounded-xl shadow-xl border border-slate-700 h-full flex flex-col">
               <ChecklistTabs />
               <div className="flex-1 flex flex-col">
                 <ChecklistPanel
